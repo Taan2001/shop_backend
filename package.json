@@ -1,0 +1,40 @@
+{
+    "name": "shop_backend",
+    "version": "1.0.0",
+    "description": "The RESTFul APIs server.",
+    "main": "index.js",
+    "type": "module",
+    "scripts": {
+        "dev": "nodemon",
+        "build": "node build.js",
+        "start": "node dist/index.cjs",
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix",
+        "prettier": "prettier --check .",
+        "prettier:fix": "prettier --write ."
+    },
+    "author": "Taan",
+    "license": "ISC",
+    "dependencies": {
+        "body-parser": "^2.2.0",
+        "cookie-parser": "^1.4.7",
+        "express": "^5.1.0"
+    },
+    "devDependencies": {
+        "@types/body-parser": "^1.19.6",
+        "@types/cookie-parser": "^1.4.9",
+        "@types/express": "^5.0.3",
+        "@typescript-eslint/eslint-plugin": "^8.44.0",
+        "@typescript-eslint/parser": "^8.44.0",
+        "esbuild": "^0.25.10",
+        "eslint": "^9.35.0",
+        "eslint-config-prettier": "^10.1.8",
+        "eslint-plugin-prettier": "^5.5.4",
+        "nodemon": "^3.1.10",
+        "prettier": "^3.6.2",
+        "ts-node": "^10.9.2",
+        "tsx": "^4.20.5",
+        "typescript": "^5.9.2"
+    }
+}
