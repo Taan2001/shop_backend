@@ -12,7 +12,7 @@ node version 20.19.4
 - [ESLint](https://eslint.org/) + [Prettier](https://prettier.io/) (code style)
 
 ## 📂 Cấu trúc thư mục
-
+````
 src/
 ├── controllers/ # Xử lý logic input và output cho services
 ├── middlewares/ # Middleware custom
@@ -33,6 +33,7 @@ src/
 ├ package.json
 ├ README.md
 ├ tsconfig.json
+````
 
 ## 📦 Cài đặt
 
