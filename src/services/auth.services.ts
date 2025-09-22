@@ -1,15 +1,42 @@
 // libs
-import { Request, Response, NextFunction } from "express";
-import { ResponseError, ResponseSuccess } from "../utils/common";
-import { SignInSuccess } from "../interfaces/auth.interface";
+import { Request, NextFunction } from "express";
 
-export const getSignInService = async (req: Request, res: Response, next: NextFunction) => {
+// interfaces
+import { ISignInSuccess } from "../interfaces/auth.interface";
+
+// utils
+import { ResponseError, ResponseSuccess } from "../utils/common";
+
+/**
+ * Sign In Service
+ * @param { Request } request - Express Request
+ * @param { NextFunction }next - Express Next Function
+ * @returns { Promise<IAppSuccess<ISignInSuccess> | IAppError<string>> } - Promise resolving to service result
+ */
+export const getSignInService = async (request: Request, next: NextFunction) => {
     // Simulate some business logic, e.g., validating user credentials
-    const { username, password } = req.query;
+    const { username, password } = request.query;
 
     if (username === "admin" && password === "password") {
-        return ResponseSuccess<SignInSuccess>({ data: { user: { username: username } } });
+        return ResponseSuccess<ISignInSuccess>({ data: { user: { username: username } } });
     } else {
-        throw ResponseError<string>({ status: "error", statusCode: "E0001", message: "Invalid credentials" });
+        throw ResponseError<string>({ statusCode: "E0001", message: "Invalid credentials" });
+    }
+};
+
+/**
+ * Sign Up Service
+ * @param { Request } request - Express Request
+ * @param { NextFunction }next - Express Next Function
+ * @returns { Promise<IAppSuccess<ISignInSuccess> | IAppError<string>> } - Promise resolving to service result
+ */
+export const postSignUpService = async (request: Request, next: NextFunction) => {
+    // Simulate some business logic, e.g., validating user credentials
+    const { username, password } = request.query;
+
+    if (username === "admin" && password === "password") {
+        return ResponseSuccess<ISignInSuccess>({ data: { user: { username: username } } });
+    } else {
+        throw ResponseError<string>({ statusCode: "E0001", message: "Invalid credentials" });
     }
 };

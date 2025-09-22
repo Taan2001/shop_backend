@@ -1,9 +1,14 @@
-import { AppError, AppSuccess } from "../interfaces/app.interface";
+import { Request, Response, NextFunction } from "express";
+import { IAppError, IAppSuccess, IAsyncFunction } from "../interfaces/app.interface";
 
-export const ResponseSuccess = <D>({ data }: AppSuccess<D>) => {
+export const ResponseSuccess = <D>({ data }: IAppSuccess<D>) => {
     return { status: "success", data };
 };
 
-export const ResponseError = <T>(error: AppError<T>) => {
-    return { status: "error", message: error.message, statusCode: error.statusCode };
+export const ResponseError = <T>({ message, statusCode }: IAppError<T>) => {
+    return { status: "error", statusCode, message };
+};
+
+export const catchAsync = (fn: IAsyncFunction) => (request: Request, response: Response, next: NextFunction) => {
+    fn(request, response, next).catch((error) => next(error));
 };

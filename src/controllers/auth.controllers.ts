@@ -2,23 +2,52 @@
 import { Request, Response, NextFunction } from "express";
 
 // services
-import { getSignInService } from "../services";
+import { getSignInService, postSignUpService } from "../services/auth.services";
 
 // utils
+import { catchAsync } from "../utils/common";
 import logger from "../utils/logger";
 
-export const getSignInController = async (req: Request, res: Response, next: NextFunction) => {
-    const timeStart = Date.now().toString();
-    try {
-        logger.request(timeStart, req.baseUrl + req.route?.path, req.query);
+/**
+ * Sign In Controller
+ * @param { Request } request - Express Request
+ * @param { Response} response - Express Response
+ * @param { NextFunction }next - Express Next Function
+ */
+export const getSignInController = catchAsync(async (request: Request, response: Response, next: NextFunction) => {
+    // create request id
+    request.requestId = Date.now().toString();
 
-        const result = await getSignInService(req, res, next);
+    // log request
+    logger.request(request.requestId, request.baseUrl + request.route?.path, request.query);
 
-        logger.response(timeStart, req.baseUrl + req.route?.path, result);
+    const result = await getSignInService(request, next);
 
-        return res.status(200).json(result);
-    } catch (error: unknown) {
-        logger.newError(timeStart, req.baseUrl + req.route?.path, error);
-        next(error);
-    }
-};
+    // log response
+    logger.response(request.requestId, request.baseUrl + request.route?.path, result);
+
+    // send response
+    response.status(201).send(result);
+});
+
+/**
+ * Sign Up Controller
+ * @param { Request } request - Express Request
+ * @param { Response} response - Express Response
+ * @param { NextFunction }next - Express Next Function
+ */
+export const postSignUpController = catchAsync(async (request: Request, response: Response, next: NextFunction) => {
+    // create request id
+    request.requestId = Date.now().toString();
+
+    // log request
+    logger.request(request.requestId, request.baseUrl + request.route?.path, request.query);
+
+    const result = await postSignUpService(request, next);
+
+    // log response
+    logger.response(request.requestId, request.baseUrl + request.route?.path, result);
+
+    // send response
+    response.status(201).send(result);
+});

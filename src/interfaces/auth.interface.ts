@@ -1,4 +1,4 @@
-export interface SignInSuccess {
+export interface ISignInSuccess {
     user: {
         username: string;
     };
