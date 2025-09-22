@@ -3,6 +3,9 @@ import express, { Application } from "express";
 import http from "http";
 import bodyParser from "body-parser";
 
+// middlewares
+import ErrorHandleMiddleware from "./middlewares/errorHandle.middlerware";
+
 // routes
 import { authRouter } from "./routes";
 
@@ -14,6 +17,9 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use("/api/v1", authRouter);
+
+// error handling middleware
+app.use(ErrorHandleMiddleware);
 
 // create a server from app
 const server = http.createServer(app);
