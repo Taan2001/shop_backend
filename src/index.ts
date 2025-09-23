@@ -2,15 +2,23 @@
 import express, { Application } from "express";
 import http from "http";
 import bodyParser from "body-parser";
+import dotenv from "dotenv";
 
 // middlewares
-import ErrorHandleMiddleware from "./middlewares/errorHandle.middlerware";
+import ErrorHandleMiddleware from "./middlewares/error-handle.middlerware";
 
 // routes
 import { authRouter } from "./routes";
+import databaseConnectionHandler from "./database/db";
 
+// create express app
 const app: Application = express();
-const port: number = process.env.PORT ? parseInt(process.env.PORT) : 3000;
+
+// load environment variables from .env file
+dotenv.config();
+
+// set port, default is 3000
+const port: number = process.env.PORT ? parseInt(process.env.PORT) : 8080;
 
 // parse requests of content-type - application/json
 app.use(bodyParser.json());
@@ -26,5 +34,8 @@ const server = http.createServer(app);
 
 // start server
 server.listen(port, async () => {
+    // test database connection
+    await databaseConnectionHandler();
+
     console.log(`Server is running on http://localhost:${port}`);
 });
