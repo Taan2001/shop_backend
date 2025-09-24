@@ -1,16 +1,36 @@
 import { Request, Response, NextFunction } from "express";
 
 export interface IAppSuccess<D> {
-    status?: "success";
+    statusCode: number;
     data: D;
 }
 
-export interface IAppError<T> {
-    status?: "error";
-    statusCode: string;
-    message: T;
+export interface IErrorDetail {
+    functionName: string;
+    params: string[];
+    errorMessage: string;
+}
+
+export interface IAppError {
+    apiName: string;
+    statusCode: number;
+    errorCode: string;
+    errorMessages: string[];
+    errorParams?: string[];
+    errorDetails?: IErrorDetail[];
 }
 
 export interface IAsyncFunction {
-    (request: Request, response: Response, next: NextFunction): Promise<void>;
+    (request: Request, response: Response, nextFunction: NextFunction): Promise<void>;
+}
+export interface IResponseSuccess<D> extends IAppSuccess<D> {
+    status: "success";
+}
+
+export interface IResponseError extends IAppError {
+    status: "error";
+}
+
+export interface IExceptionResponseError extends Omit<IResponseError, "statusCode"> {
+    errorException: Error;
 }

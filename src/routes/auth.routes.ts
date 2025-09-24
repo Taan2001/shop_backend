@@ -3,6 +3,8 @@ import { Router } from "express";
 
 // controllers
 import { getSignInController, postSignUpController } from "../controllers/auth.controllers";
+import headerHandlerMiddleware from "../middlewares/header-handler.middlerware";
+import authenticationHandlerMiddleware from "../middlewares/authentication-handler.middleware";
 
 // middlewares
 
@@ -10,9 +12,9 @@ import { getSignInController, postSignUpController } from "../controllers/auth.c
 const authRouter = Router();
 
 // GET /sign-in
-authRouter.get("/sign-in", getSignInController);
+authRouter.get("/sign-in", headerHandlerMiddleware, getSignInController);
 
-// GET /sign-up
-authRouter.get("/sign-up", postSignUpController);
+// POST /sign-up
+authRouter.post("/sign-up", headerHandlerMiddleware, authenticationHandlerMiddleware, postSignUpController);
 
 export default authRouter;

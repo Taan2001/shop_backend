@@ -5,10 +5,10 @@ import bodyParser from "body-parser";
 import dotenv from "dotenv";
 
 // middlewares
-import ErrorHandleMiddleware from "./middlewares/error-handle.middlerware";
+import errorHandleMiddleware from "./middlewares/error-handler.middlerware";
 
 // routes
-import { authRouter } from "./routes";
+import routes from "./routes";
 import databaseConnectionHandler from "./database/db";
 
 // create express app
@@ -24,10 +24,11 @@ const port: number = process.env.PORT ? parseInt(process.env.PORT) : 8080;
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.use("/api/v1", authRouter);
+// Mount all application routes under the /api/v1 prefix
+app.use("/api/v1", routes);
 
 // error handling middleware
-app.use(ErrorHandleMiddleware);
+app.use(errorHandleMiddleware);
 
 // create a server from app
 const server = http.createServer(app);
