@@ -28,9 +28,8 @@ export const ResponseSuccess = <D>({ statusCode, data }: IAppSuccess<D>): IRespo
  * @param {ErrorDetail[]} errorDetails the details of error
  * @returns {IResponseError} IResponseError
  */
-export const ResponseError = ({ apiName, statusCode, errorCode, errorMessages, errorParams = [], errorDetails = [] }: IAppError): IResponseError => ({
+export const ResponseError = ({ statusCode, errorCode, errorMessages, errorParams = [], errorDetails = [] }: IAppError): IResponseError => ({
     status: "error",
-    apiName,
     statusCode,
     errorCode,
     errorMessages,

@@ -5,6 +5,7 @@ import { Request, NextFunction } from "express";
 
 // utils
 import { ResponseError } from "./common";
+import { ERROR_LIST } from "../constants/error.constant";
 
 /**
  * Generate Access Token Function
@@ -20,9 +21,8 @@ export const generateAccessToken = async <T extends string | object | Buffer>(re
         if (!process.env.JWT_ACCESS_TOKEN_SECRET) {
             throw ResponseError({
                 statusCode: 400,
-                apiName: request.apiName,
-                errorCode: "E00001",
-                errorMessages: ["The environment variable 'JWT_ACCESS_TOKEN_SECRET' does not exist."],
+                errorCode: ERROR_LIST.ENVIRONMENT_VARIABLE_ERROR.ERROR_CODE,
+                errorMessages: [ERROR_LIST.ENVIRONMENT_VARIABLE_ERROR.ERROR_MESSAGE("JWT_ACCESS_TOKEN_SECRET")],
                 errorParams: ["JWT_ACCESS_TOKEN_SECRET"],
                 errorDetails: [
                     {
@@ -38,9 +38,8 @@ export const generateAccessToken = async <T extends string | object | Buffer>(re
         if (!process.env.JWT_ACCESS_TOKEN_EXPIRES_IN) {
             throw ResponseError({
                 statusCode: 400,
-                apiName: request.apiName,
-                errorCode: "E00001",
-                errorMessages: ["The environment variable 'JWT_ACCESS_TOKEN_EXPIRES_IN' does not exist."],
+                errorCode: ERROR_LIST.ENVIRONMENT_VARIABLE_ERROR.ERROR_CODE,
+                errorMessages: [ERROR_LIST.ENVIRONMENT_VARIABLE_ERROR.ERROR_MESSAGE("JWT_ACCESS_TOKEN_EXPIRES_IN")],
                 errorParams: ["JWT_ACCESS_TOKEN_EXPIRES_IN"],
                 errorDetails: [
                     {
@@ -64,9 +63,8 @@ export const generateAccessToken = async <T extends string | object | Buffer>(re
                         reject(
                             ResponseError({
                                 statusCode: 400,
-                                apiName: request.apiName,
-                                errorCode: "E00002",
-                                errorMessages: ["An error occurred while generating the access token."],
+                                errorCode: ERROR_LIST.GENERATE_ACCESS_TOKEN_ERROR.ERROR_CODE,
+                                errorMessages: [ERROR_LIST.GENERATE_ACCESS_TOKEN_ERROR.ERROR_MESSAGE()],
                                 errorParams: ["payload"],
                                 errorDetails: [
                                     {
@@ -103,9 +101,8 @@ export const generateRefreshToken = async <T extends string | object | Buffer>(r
         if (!process.env.JWT_REFRESH_TOKEN_SECRET) {
             throw ResponseError({
                 statusCode: 400,
-                apiName: request.apiName,
-                errorCode: "E00001",
-                errorMessages: ["The environment variable 'JWT_REFRESH_TOKEN_SECRET' does not exist."],
+                errorCode: ERROR_LIST.ENVIRONMENT_VARIABLE_ERROR.ERROR_CODE,
+                errorMessages: [ERROR_LIST.ENVIRONMENT_VARIABLE_ERROR.ERROR_MESSAGE("JWT_REFRESH_TOKEN_SECRET")],
                 errorParams: ["JWT_REFRESH_TOKEN_SECRET"],
                 errorDetails: [
                     {
@@ -121,9 +118,8 @@ export const generateRefreshToken = async <T extends string | object | Buffer>(r
         if (!process.env.JWT_REFRESH_TOKEN_EXPIRES_IN) {
             throw ResponseError({
                 statusCode: 400,
-                apiName: request.apiName,
-                errorCode: "E00001",
-                errorMessages: ["The environment variable 'JWT_REFRESH_TOKEN_EXPIRES_IN' does not exist."],
+                errorCode: ERROR_LIST.ENVIRONMENT_VARIABLE_ERROR.ERROR_CODE,
+                errorMessages: [ERROR_LIST.ENVIRONMENT_VARIABLE_ERROR.ERROR_MESSAGE("JWT_REFRESH_TOKEN_EXPIRES_IN")],
                 errorParams: ["JWT_REFRESH_TOKEN_EXPIRES_IN"],
                 errorDetails: [
                     {
@@ -148,9 +144,8 @@ export const generateRefreshToken = async <T extends string | object | Buffer>(r
                         reject(
                             ResponseError({
                                 statusCode: 400,
-                                apiName: request.apiName,
-                                errorCode: "E00003",
-                                errorMessages: ["An error occurred while generating the refresh token."],
+                                errorCode: ERROR_LIST.GENERATE_REFRESH_TOKEN_ERROR.ERROR_CODE,
+                                errorMessages: [ERROR_LIST.GENERATE_REFRESH_TOKEN_ERROR.ERROR_MESSAGE()],
                                 errorParams: ["payload"],
                                 errorDetails: [
                                     {
@@ -174,44 +169,24 @@ export const generateRefreshToken = async <T extends string | object | Buffer>(r
 };
 
 /**
- * Generate Refresh Token Function
+ * Verify Access Token Function
  * @param {Request} request - Express Request
- * @param {Response} response - Express Response
- * @param {nextFunction} nextFunction - Express Next Function
- * @param {string | object | Buffer} payload - Payload to sign, could be an literal, buffer or string
- * @returns {boolean} -
+ * @param {string} accessToken - Access Token
  */
-export const verifyToken = async (request: Request, token: string, tokenName: "accessToken" | "refreshToken") => {
-    let paramName = "";
-    let secret: string | undefined;
-    let errorCode: string;
-
-    if (tokenName === "accessToken") {
-        paramName = "JWT_ACCESS_TOKEN_SECRET";
-        secret = process.env.JWT_ACCESS_TOKEN_SECRET;
-        errorCode = "E00005";
-    }
-
-    if (tokenName === "refreshToken") {
-        paramName = "JWT_REFRESH_TOKEN_SECRET";
-        secret = process.env.JWT_REFRESH_TOKEN_SECRET;
-        errorCode = "E00006";
-    }
-
+export const verifyAccessToken = async (request: Request, accessToken: string) => {
     try {
         // Check if environment variables are set
-        if (!secret) {
+        if (!process.env.JWT_ACCESS_TOKEN_SECRET) {
             throw ResponseError({
                 statusCode: 400,
-                apiName: request.apiName,
-                errorCode: "E00001",
-                errorMessages: [`The environment variable '${paramName}' does not exist.`],
-                errorParams: [paramName],
+                errorCode: ERROR_LIST.ENVIRONMENT_VARIABLE_ERROR.ERROR_CODE,
+                errorMessages: [ERROR_LIST.ENVIRONMENT_VARIABLE_ERROR.ERROR_MESSAGE("JWT_ACCESS_TOKEN_SECRET")],
+                errorParams: ["JWT_ACCESS_TOKEN_SECRET"],
                 errorDetails: [
                     {
                         functionName: "verifyToken",
-                        params: [paramName],
-                        errorMessage: `The environment variable '${paramName}' does not exist or has no data.`,
+                        params: ["JWT_ACCESS_TOKEN_SECRET"],
+                        errorMessage: `The environment variable JWT_ACCESS_TOKEN_SECRET does not exist or has no data.`,
                     },
                 ],
             });
@@ -219,20 +194,75 @@ export const verifyToken = async (request: Request, token: string, tokenName: "a
 
         // Verify token
         await new Promise<void>((resolve, reject) => {
-            jwt.verify(token, secret, async (error, decoded) => {
+            jwt.verify(accessToken, String(process.env.JWT_ACCESS_TOKEN_SECRET), async (error, decoded) => {
                 if (error) {
                     reject(
                         ResponseError({
                             statusCode: 401,
-                            apiName: request.apiName,
-                            errorCode: errorCode,
-                            errorMessages: [`Unauthorized ${tokenName}`],
-                            errorParams: [tokenName],
+                            errorCode: ERROR_LIST.VERIFY_ACCESS_TOKEN_ERROR.ERROR_CODE,
+                            errorMessages: [ERROR_LIST.VERIFY_ACCESS_TOKEN_ERROR.ERROR_MESSAGE()],
+                            errorParams: ["accessToken"],
                             errorDetails: [
                                 {
                                     functionName: "jwt.verify",
-                                    params: [tokenName],
-                                    errorMessage: `The ${tokenName} is expired.`,
+                                    params: ["accessToken"],
+                                    errorMessage: `The accessToken is expired.`,
+                                },
+                            ],
+                        })
+                    );
+                }
+                // TO DO
+                // =====
+
+                resolve();
+            });
+        });
+    } catch (error) {
+        throw error;
+    }
+};
+
+/**
+ * Verify Refresh Token Function
+ * @param {Request} request - Express Request
+ * @param {string} refreshToken - Refresh Token
+ * @returns {boolean} -
+ */
+export const verifyRefreshToken = async (request: Request, refreshToken: string) => {
+    try {
+        // Check if environment variables are set
+        if (!process.env.JWT_REFRESH_TOKEN_SECRET) {
+            throw ResponseError({
+                statusCode: 400,
+                errorCode: ERROR_LIST.ENVIRONMENT_VARIABLE_ERROR.ERROR_CODE,
+                errorMessages: [ERROR_LIST.ENVIRONMENT_VARIABLE_ERROR.ERROR_MESSAGE("JWT_REFRESH_TOKEN_SECRET")],
+                errorParams: ["JWT_REFRESH_TOKEN_SECRET"],
+                errorDetails: [
+                    {
+                        functionName: "verifyToken",
+                        params: ["JWT_REFRESH_TOKEN_SECRET"],
+                        errorMessage: `The environment variable '${"JWT_REFRESH_TOKEN_SECRET"}' does not exist or has no data.`,
+                    },
+                ],
+            });
+        }
+
+        // Verify token
+        await new Promise<void>((resolve, reject) => {
+            jwt.verify(refreshToken, String(process.env.JWT_REFRESH_TOKEN_SECRET), async (error, decoded) => {
+                if (error) {
+                    reject(
+                        ResponseError({
+                            statusCode: 401,
+                            errorCode: ERROR_LIST.VERIFY_REFRESH_TOKEN_ERROR.ERROR_CODE,
+                            errorMessages: [ERROR_LIST.VERIFY_REFRESH_TOKEN_ERROR.ERROR_MESSAGE()],
+                            errorParams: ["refreshToken"],
+                            errorDetails: [
+                                {
+                                    functionName: "jwt.verify",
+                                    params: ["refreshToken"],
+                                    errorMessage: "The refreshToken is expired.",
                                 },
                             ],
                         })

@@ -6,7 +6,7 @@ import { ISignInSuccess } from "../interfaces/auth.interface";
 
 // utils
 import { ResponseError, ResponseSuccess } from "../utils/common";
-import { generateAccessToken, generateRefreshToken } from "../utils/jwt";
+import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "../utils/jwt";
 
 /**
  * Sign In Service
@@ -18,16 +18,14 @@ export const getSignInService = async (request: Request, nextFunction: NextFunct
     try {
         // Simulate some business logic, e.g., validating user credentials
         const { username, password } = request.query;
-
         const accessToken = await generateAccessToken(request, nextFunction, { username });
         const refreshToken = await generateRefreshToken(request, nextFunction, { username });
 
         if (username === "admin" && password === "password") {
-            return ResponseSuccess<ISignInSuccess>({ statusCode: 200, data: { user: { username: username }, accessToken, refreshToken } });
+            return ResponseSuccess<ISignInSuccess>({ statusCode: 200, data: { user: { userId: username }, accessToken, refreshToken } });
         } else {
             throw ResponseError({
                 statusCode: 400,
-                apiName: request.baseUrl + request.route.path,
                 errorCode: "E99999",
                 errorMessages: ["Invalid credentials"],
             });
@@ -45,11 +43,10 @@ export const getSignInService = async (request: Request, nextFunction: NextFunct
  */
 export const postSignUpService = async (request: Request, nextFunction: NextFunction) => {
     // Simulate some business logic, e.g., validating user credentials
-    const { username, password } = request.query;
-
-    if (username === "admin" && password === "password") {
-        return ResponseSuccess<ISignInSuccess>({ statusCode: 200, data: { user: { username: username } } });
-    } else {
-        throw ResponseError({ statusCode: 400, apiName: request.baseUrl + request.route.path, errorCode: "E00001", errorMessages: ["Invalid credentials"] });
-    }
+    // const { username, password } = request.query;
+    // if (username === "admin" && password === "password") {
+    //     return ResponseSuccess<ISignInSuccess>({ statusCode: 200, data: { user: { userId: username } } });
+    // } else {
+    //     throw ResponseError({ statusCode: 400, apiName: request.baseUrl + request.route.path, errorCode: "E00001", errorMessages: ["Invalid credentials"] });
+    // }
 };

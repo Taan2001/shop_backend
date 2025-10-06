@@ -12,7 +12,6 @@ export interface IErrorDetail {
 }
 
 export interface IAppError {
-    apiName: string;
     statusCode: number;
     errorCode: string;
     errorMessages: string[];

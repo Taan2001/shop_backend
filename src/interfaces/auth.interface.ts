@@ -1,6 +1,6 @@
 export interface ISignInSuccess {
     user: {
-        username: string;
+        userId: string;
     };
     accessToken: string;
     refreshToken: string;

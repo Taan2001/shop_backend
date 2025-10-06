@@ -1,7 +1,8 @@
 // libs
 import { Request, Response, NextFunction } from "express";
 import { ResponseError } from "../utils/common";
-import { verifyToken } from "../utils/jwt";
+import { verifyAccessToken } from "../utils/jwt";
+import { ERROR_LIST } from "../constants/error.constant";
 
 /**
  * Authentication Handler
@@ -16,9 +17,8 @@ const authenticationHandlerMiddleware = async (request: Request, response: Respo
         if (!authorization) {
             throw ResponseError({
                 statusCode: 401,
-                apiName: request.apiName,
-                errorCode: "E00004",
-                errorMessages: ["Missing Authorization header."],
+                errorCode: ERROR_LIST.MISSING_AUTHORIZATION_HEADER.ERROR_CODE,
+                errorMessages: [ERROR_LIST.MISSING_AUTHORIZATION_HEADER.ERROR_MESSAGE()],
                 errorParams: ["Authorization"],
                 errorDetails: [
                     {
@@ -32,7 +32,7 @@ const authenticationHandlerMiddleware = async (request: Request, response: Respo
 
         const accessToken = authorization.split(" ")[1];
 
-        await verifyToken(request, accessToken, "accessToken");
+        await verifyAccessToken(request, accessToken);
 
         nextFunction();
     } catch (error) {

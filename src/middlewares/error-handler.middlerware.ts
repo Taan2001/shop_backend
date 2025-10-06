@@ -19,11 +19,11 @@ const errorHandleMiddleware = async (error: IResponseError, request: Request, re
     const status = error.status || "error";
     const statusCode = error.statusCode || 500;
     const errorCode = error.errorCode || "E9999";
-    const apiName = error.apiName || "Unknown API";
+    const apiName = request.apiName || "Unknown API";
     const errorMessages = error.errorMessages || ["Internal Server Error"];
     const errorParams = error.errorParams || [];
     const errorDetails = error.errorDetails || [];
-    const responseError: Omit<IResponseError, "statusCode"> = { status, apiName, errorCode, errorMessages, errorParams, errorDetails };
+    const responseError: Omit<IResponseError, "statusCode"> & { apiName: string } = { status, apiName, errorCode, errorMessages, errorParams, errorDetails };
     try {
         console.log("error-try:", error);
 
