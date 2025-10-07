@@ -1,5 +1,7 @@
 // libs
-import { createPool, Pool, PoolConnection } from "mysql2";
+import dotenv from "dotenv";
+dotenv.config();
+import { createPool, PoolConnection } from "mysql2";
 
 /**
  * Create a MySQL connection pool
@@ -21,11 +23,11 @@ export const pool = createPool({
  * @param values The values to pass to the query
  * @returns A promise that resolves with the results of the query
  */
-export const queryPromise = async <T, V>(query: string, values?: V): Promise<T> =>
-    new Promise<T>((resolve, reject) => {
+export const queryPromise = async <R, V>(query: string, values?: V): Promise<R[]> =>
+    new Promise<R[]>((resolve, reject) => {
         pool.query(query, values, (err, results) => {
             if (err) return reject(err);
-            resolve(results as T);
+            resolve(results as R[]);
         });
     });
 
@@ -55,11 +57,11 @@ export const createTransactionConnection = async (): Promise<PoolConnection> =>
  * @param values The values to pass to the query
  * @returns A promise that resolves with the results of the query
  */
-export const transactionQueryPromise = async <T, V>(transaction: PoolConnection, query: string, values?: V): Promise<T> =>
-    new Promise<T>((resolve, reject) => {
+export const transactionQueryPromise = async <R, V>(transaction: PoolConnection, query: string, values?: V): Promise<R[]> =>
+    new Promise<R[]>((resolve, reject) => {
         transaction.query(query, values, (err, results) => {
             if (err) return reject(err);
-            resolve(results as T);
+            resolve(results as R[]);
         });
     });
 

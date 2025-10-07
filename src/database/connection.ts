@@ -22,11 +22,11 @@ export const createDatabaseConnection = async (): Promise<Connection> =>
  * @param values The values to pass to the query
  * @returns A promise that resolves with the results of the query
  */
-export const queryPromise = async <T, V>(query: string, values?: V): Promise<T> => {
+export const queryPromise = async <R, V>(query: string, values?: V): Promise<R[]> => {
     const connection = await createDatabaseConnection();
     connection.connect();
 
-    return new Promise<T>((resolve, reject) => {
+    return new Promise<R[]>((resolve, reject) => {
         connection.query(query, values, (error, results) => {
             if (error) {
                 connection.destroy();
@@ -34,7 +34,7 @@ export const queryPromise = async <T, V>(query: string, values?: V): Promise<T> 
             }
 
             connection.destroy();
-            return resolve(results as T);
+            return resolve(results as R[]);
         });
     });
 };
@@ -66,14 +66,14 @@ export const createTransactionConnection = async (): Promise<Connection> => {
  * @param values The values to pass to the query
  * @returns A promise that resolves with the results of the query
  */
-export const transactionQueryPromise = async <T, V>(transaction: Connection, query: string, values?: V): Promise<T> =>
-    new Promise<T>((resolve, reject) => {
+export const transactionQueryPromise = async <R, V>(transaction: Connection, query: string, values?: V): Promise<R[]> =>
+    new Promise<R[]>((resolve, reject) => {
         transaction.query(query, values, (error, results) => {
             if (error) {
                 return reject(error);
             }
 
-            return resolve(results as T);
+            return resolve(results as R[]);
         });
     });
 
