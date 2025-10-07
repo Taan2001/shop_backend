@@ -15,7 +15,7 @@ import logger from "../utils/logger";
  * @param {NextFunction} nextFunction - Express Next Function
  */
 export const postRefreshTokenController = catchAsync(async (request: Request, response: Response, nextFunction: NextFunction) => {
-    request.payload = { refreshToken: request.body.username };
+    request.payload = { refreshToken: request.body.refreshToken };
     // log request
     logger.request(request.requestId, request.apiName, request.payload);
 

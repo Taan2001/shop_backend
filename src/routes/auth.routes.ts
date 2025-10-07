@@ -3,10 +3,10 @@ import { Router } from "express";
 
 // controllers
 import { postRefreshTokenController, postSignInController, postSignUpController } from "../controllers/auth.controllers";
-import headerHandlerMiddleware from "../middlewares/header-handler.middlerware";
-import authenticationHandlerMiddleware from "../middlewares/authentication-handler.middleware";
 
 // middlewares
+import headerHandlerMiddleware from "../middlewares/header-handler.middlerware";
+import authenticationHandlerMiddleware from "../middlewares/authentication-handler.middleware";
 
 // create router
 const authRouter = Router();

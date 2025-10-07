@@ -1,5 +1,4 @@
-import { ERROR_LIST } from "../../constants/error.constant";
-import { ResponseError } from "../../utils/common";
+// database
 import { queryPromise } from "../connection-pool";
 import {
     GetUserInformationByUsernamePasswordDTO,
@@ -7,6 +6,12 @@ import {
     GetUserInformationByUserIdDTO,
     GetUserInformationByUserIdValue,
 } from "../dto/auth.dto";
+
+// constants
+import { ERROR_LIST } from "../../constants/error.constant";
+
+// utils
+import { ResponseError } from "../../utils/common";
 
 /**
  * get the user information by user id

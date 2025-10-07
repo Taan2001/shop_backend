@@ -6,7 +6,7 @@ import { Request, NextFunction } from "express";
 // utils
 import { ResponseError } from "./common";
 import { ERROR_LIST } from "../constants/error.constant";
-import { IRequestUserInformation } from "../interfaces/app.interface";
+import { ICurrentUser } from "../interfaces/app.interface";
 
 // interfaces
 
@@ -176,7 +176,7 @@ export const generateRefreshToken = async <T extends string | object | Buffer>(r
  * @param {Request} request - Express Request
  * @param {string} accessToken - Access Token
  */
-export const verifyAccessToken = async (request: Request, accessToken: string): Promise<IRequestUserInformation> => {
+export const verifyAccessToken = async (request: Request, accessToken: string): Promise<ICurrentUser> => {
     try {
         // Check if environment variables are set
         if (!process.env.JWT_ACCESS_TOKEN_SECRET) {
@@ -196,7 +196,7 @@ export const verifyAccessToken = async (request: Request, accessToken: string): 
         }
 
         // Verify token
-        return await new Promise<IRequestUserInformation>((resolve, reject) => {
+        return await new Promise<ICurrentUser>((resolve, reject) => {
             jwt.verify(accessToken, String(process.env.JWT_ACCESS_TOKEN_SECRET), async (error, decoded) => {
                 if (error) {
                     reject(
@@ -209,17 +209,17 @@ export const verifyAccessToken = async (request: Request, accessToken: string): 
                                 {
                                     functionName: "verifyAccessToken",
                                     params: [accessToken],
-                                    errorMessage: JSON.stringify(error),
+                                    errorMessage: String(error),
                                 },
                             ],
                         })
                     );
                 }
                 // TO DO
-                const userInformation = decoded as IRequestUserInformation;
+                const currentUser = decoded as ICurrentUser;
                 // =====
 
-                resolve(userInformation);
+                resolve(currentUser);
             });
         });
     } catch (error) {
@@ -233,7 +233,7 @@ export const verifyAccessToken = async (request: Request, accessToken: string): 
  * @param {string} refreshToken - Refresh Token
  * @returns {boolean} -
  */
-export const verifyRefreshToken = async (request: Request, refreshToken: string): Promise<IRequestUserInformation> => {
+export const verifyRefreshToken = async (request: Request, refreshToken: string): Promise<ICurrentUser> => {
     try {
         // Check if environment variables are set
         if (!process.env.JWT_REFRESH_TOKEN_SECRET) {
@@ -253,7 +253,7 @@ export const verifyRefreshToken = async (request: Request, refreshToken: string)
         }
 
         // Verify token
-        return await new Promise<IRequestUserInformation>((resolve, reject) => {
+        return await new Promise<ICurrentUser>((resolve, reject) => {
             jwt.verify(refreshToken, String(process.env.JWT_REFRESH_TOKEN_SECRET), async (error, decoded) => {
                 if (error) {
                     reject(
@@ -273,10 +273,10 @@ export const verifyRefreshToken = async (request: Request, refreshToken: string)
                     );
                 }
                 // TO DO
-                const userInformation = decoded as IRequestUserInformation;
+                const currentUser = decoded as ICurrentUser;
                 // =====
 
-                resolve(userInformation);
+                resolve(currentUser);
             });
         });
     } catch (error) {

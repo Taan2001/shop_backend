@@ -33,9 +33,9 @@ const authenticationHandlerMiddleware = async (request: Request, response: Respo
 
         const accessToken = authorization.split(" ")[1];
 
-        const userInformation = await verifyAccessToken(request, accessToken);
+        const currentUser = await verifyAccessToken(request, accessToken);
 
-        const users = await getUserInformationByUserId(userInformation.userId);
+        const users = await getUserInformationByUserId(currentUser.userId);
 
         if (users.length !== 1) {
             throw ResponseError({
@@ -53,8 +53,8 @@ const authenticationHandlerMiddleware = async (request: Request, response: Respo
             });
         }
 
-        // Step 4: Generate a new accessToken (refer sheet postSignIn)
         const user = users[0];
+        request.currentUser = user;
 
         nextFunction();
     } catch (error) {

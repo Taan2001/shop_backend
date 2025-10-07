@@ -2,14 +2,18 @@
 import { Request, NextFunction } from "express";
 
 // interfaces
-import { IRefreshTokenSucess, IRequestRefreshToken, IRequestSignIn, ISignInSuccess } from "../interfaces/auth.interface";
+import { IRefreshTokenSucess, IRequestBodyRefreshToken, IRequestBodySignIn, ISignInSuccess } from "../interfaces/auth.interface";
+import { IResponseSuccess } from "../interfaces/app.interface";
 
 // utils
 import { ResponseError, ResponseSuccess } from "../utils/common";
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "../utils/jwt";
+
+// constants
 import { ERROR_LIST } from "../constants/error.constant";
+
+// database repositories
 import { getUserInformationByUserId, getUserInformationByUsernamePassword } from "../database/repositories/auth.repository";
-import { IResponseSuccess } from "../interfaces/app.interface";
 
 /**
  * Refresh Token Service
@@ -20,20 +24,20 @@ import { IResponseSuccess } from "../interfaces/app.interface";
 export const postRefreshTokenService = async (request: Request, nextFunction: NextFunction): Promise<IResponseSuccess<IRefreshTokenSucess>> => {
     try {
         // Step 1: Get refreshToken in request body.
-        const { refreshToken } = request.body as IRequestRefreshToken;
+        const { refreshToken } = request.body as IRequestBodyRefreshToken;
         if (!refreshToken) {
             throw ResponseError({
                 statusCode: 400,
-                errorCode: ERROR_LIST.REQUEST_REFRESH_TOKEN_ERROR.ERROR_CODE,
-                errorMessages: [ERROR_LIST.REQUEST_REFRESH_TOKEN_ERROR.ERROR_MESSAGE()],
+                errorCode: ERROR_LIST.REQUEST_BODY_PARAMS_REFRESH_TOKEN_ERROR.ERROR_CODE,
+                errorMessages: [ERROR_LIST.REQUEST_BODY_PARAMS_REFRESH_TOKEN_ERROR.ERROR_MESSAGE()],
             });
         }
 
         // Step 2: Verify and decode the refreshToken.
-        const userInformation = await verifyRefreshToken(request, refreshToken);
+        const currentUser = await verifyRefreshToken(request, refreshToken);
 
         // Step 3: Get the userInformation.
-        const users = await getUserInformationByUserId(userInformation.userId);
+        const users = await getUserInformationByUserId(currentUser.userId);
 
         if (users.length !== 1) {
             throw ResponseError({
@@ -59,6 +63,7 @@ export const postRefreshTokenService = async (request: Request, nextFunction: Ne
         throw error;
     }
 };
+
 /**
  * Sign In Service
  * @param {Request} request - Express Request
@@ -68,22 +73,22 @@ export const postRefreshTokenService = async (request: Request, nextFunction: Ne
 export const postSignInService = async (request: Request, nextFunction: NextFunction): Promise<IResponseSuccess<ISignInSuccess>> => {
     try {
         // get value in request body
-        const { username, password } = request.body as IRequestSignIn;
+        const { username, password } = request.body as IRequestBodySignIn;
         const messages = [];
 
         // Step 1: Get and validate the request body.
         if (!username) {
-            messages.push(ERROR_LIST.REQUEST_SIGN_IN_ERROR.ERROR_MESSAGE("username"));
+            messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_SIGN_IN_ERROR.ERROR_MESSAGE("username"));
         }
 
         if (!password) {
-            messages.push(ERROR_LIST.REQUEST_SIGN_IN_ERROR.ERROR_MESSAGE("password"));
+            messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_SIGN_IN_ERROR.ERROR_MESSAGE("password"));
         }
 
         if (messages.length > 0) {
             throw ResponseError({
                 statusCode: 400,
-                errorCode: ERROR_LIST.REQUEST_SIGN_IN_ERROR.ERROR_CODE,
+                errorCode: ERROR_LIST.REQUEST_BODY_PARAMS_SIGN_IN_ERROR.ERROR_CODE,
                 errorMessages: messages,
             });
         }

@@ -1,11 +1,11 @@
-export interface IRequestRefreshToken {
+export interface IRequestBodyRefreshToken {
     refreshToken: string;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface IRefreshTokenSucess extends ISignInSuccess {}
 
-export interface IRequestSignIn {
+export interface IRequestBodySignIn {
     username: string;
     password: string;
 }

@@ -40,3 +40,6 @@ export interface IRequestUserInformation {
     age: number;
     deleteFlg: number;
 }
+
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface ICurrentUser extends IRequestUserInformation {}
