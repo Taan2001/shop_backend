@@ -1,0 +1,3 @@
+export const SORT_TYPE = ["ASC", "DESC"];
+
+export const FIELD_SORT_LIST_IN_GET_USERS = ["USER_NAME", "USER_LAST_NAME", "USER_FIRST_NAME"];
