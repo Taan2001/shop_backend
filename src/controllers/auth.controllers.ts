@@ -2,11 +2,31 @@
 import { Request, Response, NextFunction } from "express";
 
 // services
-import { getSignInService, postSignUpService } from "../services/auth.services";
+import { postRefreshTokenService, postSignInService, postSignUpService } from "../services/auth.services";
 
 // utils
 import { catchAsync } from "../utils/common";
 import logger from "../utils/logger";
+
+/**
+ * Refresh Token Controller
+ * @param {Request} request - Express Request
+ * @param {Response} response - Express Response
+ * @param {NextFunction} nextFunction - Express Next Function
+ */
+export const postRefreshTokenController = catchAsync(async (request: Request, response: Response, nextFunction: NextFunction) => {
+    request.payload = { refreshToken: request.body.username };
+    // log request
+    logger.request(request.requestId, request.apiName, request.payload);
+
+    const result = await postRefreshTokenService(request, nextFunction);
+
+    // log response
+    logger.response(request.requestId, request.apiName, result);
+
+    // send response
+    response.status(result.statusCode).send(result);
+});
 
 /**
  * Sign In Controller
@@ -14,12 +34,12 @@ import logger from "../utils/logger";
  * @param {Response} response - Express Response
  * @param {NextFunction} nextFunction - Express Next Function
  */
-export const getSignInController = catchAsync(async (request: Request, response: Response, nextFunction: NextFunction) => {
-    request.payload = { username: request.query.username };
+export const postSignInController = catchAsync(async (request: Request, response: Response, nextFunction: NextFunction) => {
+    request.payload = { username: request.body.username };
     // log request
     logger.request(request.requestId, request.apiName, request.payload);
 
-    const result = await getSignInService(request, nextFunction);
+    const result = await postSignInService(request, nextFunction);
 
     // log response
     logger.response(request.requestId, request.apiName, result);

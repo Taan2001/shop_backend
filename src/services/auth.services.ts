@@ -2,34 +2,117 @@
 import { Request, NextFunction } from "express";
 
 // interfaces
-import { ISignInSuccess } from "../interfaces/auth.interface";
+import { IRefreshTokenSucess, IRequestRefreshToken, IRequestSignIn, ISignInSuccess } from "../interfaces/auth.interface";
 
 // utils
 import { ResponseError, ResponseSuccess } from "../utils/common";
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "../utils/jwt";
+import { ERROR_LIST } from "../constants/error.constant";
+import { getUserInformationByUserId, getUserInformationByUsernamePassword } from "../database/repositories/auth.repository";
+import { IResponseSuccess } from "../interfaces/app.interface";
 
+/**
+ * Refresh Token Service
+ * @param {Request} request - Express Request
+ * @param {NextFunction} nextFunction - Express Next Function
+ * @returns { Promise<IAppSuccess<ISignInSuccess> | IAppError<string>> } - Promise resolving to service result
+ */
+export const postRefreshTokenService = async (request: Request, nextFunction: NextFunction): Promise<IResponseSuccess<IRefreshTokenSucess>> => {
+    try {
+        // Step 1: Get refreshToken in request body.
+        const { refreshToken } = request.body as IRequestRefreshToken;
+        if (!refreshToken) {
+            throw ResponseError({
+                statusCode: 400,
+                errorCode: ERROR_LIST.REQUEST_REFRESH_TOKEN_ERROR.ERROR_CODE,
+                errorMessages: [ERROR_LIST.REQUEST_REFRESH_TOKEN_ERROR.ERROR_MESSAGE()],
+            });
+        }
+
+        // Step 2: Verify and decode the refreshToken.
+        const userInformation = await verifyRefreshToken(request, refreshToken);
+
+        // Step 3: Get the userInformation.
+        const users = await getUserInformationByUserId(userInformation.userId);
+
+        if (users.length !== 1) {
+            throw ResponseError({
+                statusCode: 401,
+                errorCode: ERROR_LIST.UNAUTHENTICATED_USER_ERROR.ERROR_CODE,
+                errorMessages: [ERROR_LIST.UNAUTHENTICATED_USER_ERROR.ERROR_MESSAGE()],
+            });
+        }
+
+        if (users.length === 1 && users[0].deleteFlg !== 0) {
+            throw ResponseError({
+                statusCode: 401,
+                errorCode: ERROR_LIST.UNAVAILABLE_USER_ERROR.ERROR_CODE,
+                errorMessages: [ERROR_LIST.UNAVAILABLE_USER_ERROR.ERROR_MESSAGE()],
+            });
+        }
+
+        // Step 4: Generate a new accessToken (refer sheet postSignIn)
+        const user = users[0];
+        const accessToken = await generateAccessToken(request, nextFunction, user);
+        return ResponseSuccess<ISignInSuccess>({ statusCode: 200, data: { user: { userId: user.userId }, accessToken, refreshToken } });
+    } catch (error) {
+        throw error;
+    }
+};
 /**
  * Sign In Service
  * @param {Request} request - Express Request
  * @param {NextFunction} nextFunction - Express Next Function
  * @returns { Promise<IAppSuccess<ISignInSuccess> | IAppError<string>> } - Promise resolving to service result
  */
-export const getSignInService = async (request: Request, nextFunction: NextFunction) => {
+export const postSignInService = async (request: Request, nextFunction: NextFunction): Promise<IResponseSuccess<ISignInSuccess>> => {
     try {
-        // Simulate some business logic, e.g., validating user credentials
-        const { username, password } = request.query;
-        const accessToken = await generateAccessToken(request, nextFunction, { username });
-        const refreshToken = await generateRefreshToken(request, nextFunction, { username });
+        // get value in request body
+        const { username, password } = request.body as IRequestSignIn;
+        const messages = [];
 
-        if (username === "admin" && password === "password") {
-            return ResponseSuccess<ISignInSuccess>({ statusCode: 200, data: { user: { userId: username }, accessToken, refreshToken } });
-        } else {
+        // Step 1: Get and validate the request body.
+        if (!username) {
+            messages.push(ERROR_LIST.REQUEST_SIGN_IN_ERROR.ERROR_MESSAGE("username"));
+        }
+
+        if (!password) {
+            messages.push(ERROR_LIST.REQUEST_SIGN_IN_ERROR.ERROR_MESSAGE("password"));
+        }
+
+        if (messages.length > 0) {
             throw ResponseError({
                 statusCode: 400,
-                errorCode: "E99999",
-                errorMessages: ["Invalid credentials"],
+                errorCode: ERROR_LIST.REQUEST_SIGN_IN_ERROR.ERROR_CODE,
+                errorMessages: messages,
             });
         }
+
+        // Step 2: Get the userInformation in database.
+        const users = await getUserInformationByUsernamePassword(username, password);
+
+        if (users.length !== 1) {
+            throw ResponseError({
+                statusCode: 401,
+                errorCode: ERROR_LIST.UNAUTHENTICATED_USER_ERROR.ERROR_CODE,
+                errorMessages: [ERROR_LIST.UNAUTHENTICATED_USER_ERROR.ERROR_MESSAGE()],
+            });
+        }
+
+        if (users.length === 1 && users[0].deleteFlg !== 0) {
+            throw ResponseError({
+                statusCode: 401,
+                errorCode: ERROR_LIST.UNAVAILABLE_USER_ERROR.ERROR_CODE,
+                errorMessages: [ERROR_LIST.UNAVAILABLE_USER_ERROR.ERROR_MESSAGE()],
+            });
+        }
+
+        // Step 3: Generate the accessToken and refreshToken.
+        const user = users[0];
+        const accessToken = await generateAccessToken(request, nextFunction, user);
+        const refreshToken = await generateRefreshToken(request, nextFunction, user);
+
+        return ResponseSuccess<ISignInSuccess>({ statusCode: 200, data: { user: { userId: user.userId }, accessToken, refreshToken } });
     } catch (error) {
         throw error;
     }

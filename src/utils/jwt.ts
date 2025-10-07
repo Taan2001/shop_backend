@@ -6,6 +6,9 @@ import { Request, NextFunction } from "express";
 // utils
 import { ResponseError } from "./common";
 import { ERROR_LIST } from "../constants/error.constant";
+import { IRequestUserInformation } from "../interfaces/app.interface";
+
+// interfaces
 
 /**
  * Generate Access Token Function
@@ -173,7 +176,7 @@ export const generateRefreshToken = async <T extends string | object | Buffer>(r
  * @param {Request} request - Express Request
  * @param {string} accessToken - Access Token
  */
-export const verifyAccessToken = async (request: Request, accessToken: string) => {
+export const verifyAccessToken = async (request: Request, accessToken: string): Promise<IRequestUserInformation> => {
     try {
         // Check if environment variables are set
         if (!process.env.JWT_ACCESS_TOKEN_SECRET) {
@@ -193,7 +196,7 @@ export const verifyAccessToken = async (request: Request, accessToken: string) =
         }
 
         // Verify token
-        await new Promise<void>((resolve, reject) => {
+        return await new Promise<IRequestUserInformation>((resolve, reject) => {
             jwt.verify(accessToken, String(process.env.JWT_ACCESS_TOKEN_SECRET), async (error, decoded) => {
                 if (error) {
                     reject(
@@ -204,18 +207,19 @@ export const verifyAccessToken = async (request: Request, accessToken: string) =
                             errorParams: ["accessToken"],
                             errorDetails: [
                                 {
-                                    functionName: "jwt.verify",
-                                    params: ["accessToken"],
-                                    errorMessage: `The accessToken is expired.`,
+                                    functionName: "verifyAccessToken",
+                                    params: [accessToken],
+                                    errorMessage: JSON.stringify(error),
                                 },
                             ],
                         })
                     );
                 }
                 // TO DO
+                const userInformation = decoded as IRequestUserInformation;
                 // =====
 
-                resolve();
+                resolve(userInformation);
             });
         });
     } catch (error) {
@@ -229,7 +233,7 @@ export const verifyAccessToken = async (request: Request, accessToken: string) =
  * @param {string} refreshToken - Refresh Token
  * @returns {boolean} -
  */
-export const verifyRefreshToken = async (request: Request, refreshToken: string) => {
+export const verifyRefreshToken = async (request: Request, refreshToken: string): Promise<IRequestUserInformation> => {
     try {
         // Check if environment variables are set
         if (!process.env.JWT_REFRESH_TOKEN_SECRET) {
@@ -249,7 +253,7 @@ export const verifyRefreshToken = async (request: Request, refreshToken: string)
         }
 
         // Verify token
-        await new Promise<void>((resolve, reject) => {
+        return await new Promise<IRequestUserInformation>((resolve, reject) => {
             jwt.verify(refreshToken, String(process.env.JWT_REFRESH_TOKEN_SECRET), async (error, decoded) => {
                 if (error) {
                     reject(
@@ -260,18 +264,19 @@ export const verifyRefreshToken = async (request: Request, refreshToken: string)
                             errorParams: ["refreshToken"],
                             errorDetails: [
                                 {
-                                    functionName: "jwt.verify",
-                                    params: ["refreshToken"],
-                                    errorMessage: "The refreshToken is expired.",
+                                    functionName: "verifyRefreshToken",
+                                    params: [refreshToken],
+                                    errorMessage: String(error),
                                 },
                             ],
                         })
                     );
                 }
                 // TO DO
+                const userInformation = decoded as IRequestUserInformation;
                 // =====
 
-                resolve();
+                resolve(userInformation);
             });
         });
     } catch (error) {

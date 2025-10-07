@@ -3,6 +3,7 @@ import { Request, Response, NextFunction } from "express";
 import { ResponseError } from "../utils/common";
 import { verifyAccessToken } from "../utils/jwt";
 import { ERROR_LIST } from "../constants/error.constant";
+import { getUserInformationByUserId } from "../database/repositories/auth.repository";
 
 /**
  * Authentication Handler
@@ -32,7 +33,28 @@ const authenticationHandlerMiddleware = async (request: Request, response: Respo
 
         const accessToken = authorization.split(" ")[1];
 
-        await verifyAccessToken(request, accessToken);
+        const userInformation = await verifyAccessToken(request, accessToken);
+
+        const users = await getUserInformationByUserId(userInformation.userId);
+
+        if (users.length !== 1) {
+            throw ResponseError({
+                statusCode: 401,
+                errorCode: ERROR_LIST.UNAUTHENTICATED_USER_ERROR.ERROR_CODE,
+                errorMessages: [ERROR_LIST.UNAUTHENTICATED_USER_ERROR.ERROR_MESSAGE()],
+            });
+        }
+
+        if (users.length === 1 && users[0].deleteFlg !== 0) {
+            throw ResponseError({
+                statusCode: 401,
+                errorCode: ERROR_LIST.UNAVAILABLE_USER_ERROR.ERROR_CODE,
+                errorMessages: [ERROR_LIST.UNAVAILABLE_USER_ERROR.ERROR_MESSAGE()],
+            });
+        }
+
+        // Step 4: Generate a new accessToken (refer sheet postSignIn)
+        const user = users[0];
 
         nextFunction();
     } catch (error) {

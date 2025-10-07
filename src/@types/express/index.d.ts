@@ -1,4 +1,5 @@
 import "express";
+import { IRequestUserInformation } from "../../interfaces/app.interface";
 
 declare module "express-serve-static-core" {
     interface Request {
@@ -6,5 +7,6 @@ declare module "express-serve-static-core" {
         apiName: string | "";
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         payload: any;
+        userInformation: IRequestUserInformation;
     }
 }

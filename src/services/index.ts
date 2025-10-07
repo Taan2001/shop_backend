@@ -1,1 +1,1 @@
-export { getSignInService } from "./auth.services";
+export { postSignInService } from "./auth.services";

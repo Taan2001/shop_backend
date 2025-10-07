@@ -33,3 +33,10 @@ export interface IResponseError extends IAppError {
 export interface IExceptionResponseError extends Omit<IResponseError, "statusCode"> {
     errorException: Error;
 }
+
+export interface IRequestUserInformation {
+    userId: string;
+    lastName: string;
+    age: number;
+    deleteFlg: number;
+}
