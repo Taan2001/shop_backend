@@ -31,7 +31,7 @@ export const getUsersService = async (request: Request, nextFunction: NextFuncti
         const messages: string[] = [];
         const params = [];
 
-        // Step 2-1: Check the required query parameters.
+        // -----> Step 2-1: Check the required query parameters.
         if (limit === undefined) {
             messages.push(ERROR_LIST.REQUEST_QUERY_PARAMS_GET_USERS_ERROR.ERROR_MESSAGE("limit"));
             params.push("limit");
@@ -58,7 +58,7 @@ export const getUsersService = async (request: Request, nextFunction: NextFuncti
             });
         }
 
-        // Step 2-2: Check the data of the query parameters.
+        // -----> Step 2-2: Check the data of the query parameters.
         if (!isIntegerStringRegex(limit) || (Number(limit) !== 10 && Number(limit) !== 20 && Number(limit) !== 50 && Number(limit) !== 100)) {
             messages.push(ERROR_LIST.INVALID_QUERY_PARAMS_GET_USERS_ERROR.ERROR_MESSAGE("limit"));
             params.push(limit);

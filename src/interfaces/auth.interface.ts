@@ -1,3 +1,22 @@
+export interface IRequestBodySignUp {
+    firstName: string;
+    lastName: string;
+    age: number;
+    username: string;
+    email: string;
+    password: string;
+    phoneNumber: string;
+    address: string;
+    roleIds: string[];
+}
+
+export interface ISignUpSuccess {
+    user: {
+        userId: string;
+    };
+    message: string;
+}
+
 export interface IRequestBodyRefreshToken {
     refreshToken: string;
 }

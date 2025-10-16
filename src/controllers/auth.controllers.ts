@@ -59,12 +59,12 @@ export const postSignUpController = catchAsync(async (request: Request, response
     request.requestId = Date.now().toString();
 
     // log request
-    logger.request(request.requestId, request.baseUrl + request.route?.path, request.query);
+    logger.request(request.requestId, request.apiName, request.query);
 
     const result = await postSignUpService(request, nextFunction);
 
     // log response
-    logger.response(request.requestId, request.baseUrl + request.route?.path, result);
+    logger.response(request.requestId, request.apiName, result);
 
     // send response
     response.status(201).send(result);

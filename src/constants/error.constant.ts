@@ -95,4 +95,25 @@ export const ERROR_LIST = {
         ERROR_CODE: "E00022",
         ERROR_MESSAGE: () => "Error during database query.",
     },
+    REQUEST_BODY_PARAMS_SIGN_UP_REQUIRED_ERROR: {
+        ERROR_CODE: "E00023",
+        ERROR_MESSAGE: (fieldName: string) => `The ${fieldName} field is required.`,
+    },
+    QUERY_GET_ROLE_INFOR_BY_ID_ERROR: {
+        ERROR_CODE: "E00024",
+        ERROR_MESSAGE: () => "Error during database query.",
+    },
+    REQUEST_BODY_PARAMS_SIGN_UP_ERROR: {
+        ERROR_CODE: "E00025",
+        ERROR_MESSAGE: (fieldName: string, error: "dataType" | "minLength" | "maxLength" | "minValue" | "maxValue" | "exist in database" | "duplicate") =>
+            `The data in ${fieldName} is having an error about ${error}.`,
+    },
+    QUERY_INSERT_USER_INFOR_ERROR: {
+        ERROR_CODE: "E00026",
+        ERROR_MESSAGE: () => "Error during database query.",
+    },
+    QUERY_INSERT_ROLE_RELATIONSHIP_INFOR_ERROR: {
+        ERROR_CODE: "E00027",
+        ERROR_MESSAGE: () => "Error during database query.",
+    },
 };
