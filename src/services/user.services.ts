@@ -407,7 +407,6 @@ export const postUserDetailService = async (request: Request, nextFunction: Next
             if (Array.isArray(roleIds) && roleIds.length > 0 && roleIds.every((roleId) => typeof roleId === "string")) {
                 const promiseRoles = roleIds.map(async (roleId) => {
                     const roles = await getRoleInformationByRoleId(roleId);
-                    console.log("roles:", roles);
                     if (roles.length !== 1) {
                         isRoleError = true;
                     }
@@ -427,7 +426,7 @@ export const postUserDetailService = async (request: Request, nextFunction: Next
             //     messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_USER_DETAIL_ERROR.ERROR_MESSAGE("roleIds", "admin role"));
             // }
 
-            if (request.currentUser.userId === ADMIN_CONST && !roleIds.includes(ROLES.ADMIN)) {
+            if (userId === ADMIN_CONST && !roleIds.includes(ROLES.ADMIN)) {
                 messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_USER_DETAIL_ERROR.ERROR_MESSAGE("roleIds", "admin role default"));
             }
         }

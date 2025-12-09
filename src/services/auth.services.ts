@@ -270,7 +270,6 @@ export const postSignUpService = async (request: Request, nextFunction: NextFunc
         if (Array.isArray(roleIds) && roleIds.length > 0 && roleIds.every((roleId) => typeof roleId === "string")) {
             const promiseRoles = roleIds.map(async (roleId) => {
                 const roles = await getRoleInformationByRoleId(roleId);
-                console.log("roles:", roles);
                 if (roles.length !== 1) {
                     isRoleError = true;
                 }

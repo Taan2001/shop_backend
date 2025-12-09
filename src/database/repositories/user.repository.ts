@@ -309,8 +309,8 @@ export const deleteRoleForUser = async (transaction: PoolConnection, { roleIds, 
     } catch (error) {
         throw ResponseError({
             statusCode: 500,
-            errorCode: ERROR_LIST.QUERY_INSERT_NEW_ROLES_FOR_USER_ERROR.ERROR_CODE,
-            errorMessages: [ERROR_LIST.QUERY_INSERT_NEW_ROLES_FOR_USER_ERROR.ERROR_MESSAGE()],
+            errorCode: ERROR_LIST.QUERY_DELETE_ROLES_FOR_USER_ERROR.ERROR_CODE,
+            errorMessages: [ERROR_LIST.QUERY_DELETE_ROLES_FOR_USER_ERROR.ERROR_MESSAGE()],
             errorDetails: [
                 {
                     functionName: "deleteRolesForUser",
