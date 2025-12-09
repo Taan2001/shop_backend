@@ -2,14 +2,14 @@
 import { Request, Response, NextFunction } from "express";
 
 // services
-import { getUsersService, getUserDetailService } from "../services/user.services";
+import { getUsersService, getUserDetailService, postUserDetailService } from "../services/user.services";
 
 // utils
 import { catchAsync } from "../utils/common";
 import logger from "../utils/logger";
 
 /**
- * Users Controller
+ * Get Users Controller
  * @param {Request} request - Express Request
  * @param {Response} response - Express Response
  * @param {NextFunction} nextFunction - Express Next Function
@@ -29,7 +29,7 @@ export const getUsersController = catchAsync(async (request: Request, response: 
 });
 
 /**
- * User Detail Controller
+ * Get User Detail Controller
  * @param {Request} request - Express Request
  * @param {Response} response - Express Response
  * @param {NextFunction} nextFunction - Express Next Function
@@ -40,6 +40,26 @@ export const getUserDetailController = catchAsync(async (request: Request, respo
     logger.request(request.requestId, request.apiName, request.payload);
 
     const result = await getUserDetailService(request, nextFunction);
+
+    // log response
+    logger.response(request.requestId, request.apiName, result);
+
+    // send response
+    response.status(result.statusCode).send(result);
+});
+
+/**
+ * Post User Detail Controller
+ * @param {Request} request - Express Request
+ * @param {Response} response - Express Response
+ * @param {NextFunction} nextFunction - Express Next Function
+ */
+export const postUserDetailController = catchAsync(async (request: Request, response: Response, nextFunction: NextFunction) => {
+    request.payload = { userId: request.params.userId };
+    // log request
+    logger.request(request.requestId, request.apiName, request.payload);
+
+    const result = await postUserDetailService(request, nextFunction);
 
     // log response
     logger.response(request.requestId, request.apiName, result);

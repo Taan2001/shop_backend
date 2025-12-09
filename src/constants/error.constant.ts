@@ -60,7 +60,7 @@ export const ERROR_LIST = {
         ERROR_MESSAGE: (param: string) => `The parameter value ${param} is invalid.`,
     },
     // common
-    QUERY_GET_USER_ROLE_INFOR_BY_ID_ERROR: {
+    QUERY_GET_USER_ROLE_INFOR_BY_USER_ID_ERROR: {
         ERROR_CODE: "E00015",
         ERROR_MESSAGE: () => "Error during database query.",
     },
@@ -99,7 +99,7 @@ export const ERROR_LIST = {
         ERROR_CODE: "E00023",
         ERROR_MESSAGE: (fieldName: string) => `The ${fieldName} field is required.`,
     },
-    QUERY_GET_ROLE_INFOR_BY_ID_ERROR: {
+    QUERY_GET_ROLE_INFOR_BY_ROLE_ID_ERROR: {
         ERROR_CODE: "E00024",
         ERROR_MESSAGE: () => "Error during database query.",
     },
@@ -114,6 +114,33 @@ export const ERROR_LIST = {
     },
     QUERY_INSERT_ROLE_RELATIONSHIP_INFOR_ERROR: {
         ERROR_CODE: "E00027",
+        ERROR_MESSAGE: () => "Error during database query.",
+    },
+    REQUEST_PATH_PARAMS_POST_USER_DETAIL_ERROR: {
+        ERROR_CODE: "E00028",
+        ERROR_MESSAGE: (param: string) => `The ${param} does not exist.`,
+    },
+    REQUEST_BODY_PARAMS_POST_USER_DETAIL_REQUIRED_ERROR: {
+        ERROR_CODE: "E00029",
+        ERROR_MESSAGE: (fieldName: string) => `The ${fieldName} field is required.`,
+    },
+    REQUEST_BODY_PARAMS_POST_USER_DETAIL_ERROR: {
+        ERROR_CODE: "E00030",
+        ERROR_MESSAGE: (
+            fieldName: string,
+            error: "dataType" | "minLength" | "maxLength" | "minValue" | "maxValue" | "exist in database" | "duplicate" | "admin role default"
+        ) => `The data in ${fieldName} is having an error about ${error}.`,
+    },
+    QUERY_UPDATE_USER_INFOR_ERROR: {
+        ERROR_CODE: "E00031",
+        ERROR_MESSAGE: () => "Error during database query.",
+    },
+    QUERY_DELETE_ROLES_FOR_USER_ERROR: {
+        ERROR_CODE: "E00032",
+        ERROR_MESSAGE: () => "Error during database query.",
+    },
+    QUERY_INSERT_NEW_ROLES_FOR_USER_ERROR: {
+        ERROR_CODE: "E00033",
         ERROR_MESSAGE: () => "Error during database query.",
     },
 };

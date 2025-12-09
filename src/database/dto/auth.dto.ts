@@ -1,18 +1,5 @@
 import { PoolConnection } from "mysql2/typings/mysql/lib/PoolConnection";
-
-export interface DefaultValues {
-    [index: number]: string | number;
-}
-
-export interface DefaultInsertDTO {
-    fieldCount: number;
-    affectedRows: number;
-    insertId: number;
-    info: string;
-    serverStatus: number;
-    warningStatus: number;
-    changedRows: number;
-}
+import { DefaultInsertDTO, DefaultValues } from ".";
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface GetUserInformationByUserIdValue extends DefaultValues {}

@@ -2,7 +2,7 @@
 import { Router } from "express";
 
 // controllers
-import { getUsersController, getUserDetailController } from "../controllers/user.controllers";
+import { getUsersController, getUserDetailController, postUserDetailController } from "../controllers/user.controllers";
 
 // middlewares
 import headerHandlerMiddleware from "../middlewares/header-handler.middlerware";
@@ -15,7 +15,9 @@ const userRouter = Router();
 userRouter.get("/", headerHandlerMiddleware, authenticationHandlerMiddleware, getUsersController);
 
 // GET /:userId
-
 userRouter.get("/:userId", headerHandlerMiddleware, authenticationHandlerMiddleware, getUserDetailController);
+
+// POST /:userId
+userRouter.post("/:userId", headerHandlerMiddleware, authenticationHandlerMiddleware, postUserDetailController);
 
 export default userRouter;

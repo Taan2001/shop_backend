@@ -5,12 +5,12 @@ import dayjs from "dayjs";
 
 // interfaces
 import {
-    IRefreshTokenSucess,
-    IRequestBodyRefreshToken,
-    IRequestBodySignIn,
-    IRequestBodySignUp,
-    ISignInSuccess,
-    ISignUpSuccess,
+    IPostRefreshTokenSucess,
+    IRequestBodyPostRefreshToken,
+    IRequestBodyPostSignIn,
+    IRequestBodyPostSignUp,
+    IPostSignInSuccess,
+    IPostSignUpSuccess,
 } from "../interfaces/auth.interface";
 import { IResponseSuccess } from "../interfaces/app.interface";
 
@@ -33,15 +33,15 @@ import {
 } from "../database/repositories/auth.repository";
 
 /**
- * Refresh Token Service
+ * Post Refresh Token Service
  * @param {Request} request - Express Request
  * @param {NextFunction} nextFunction - Express Next Function
- * @returns { Promise<IAppSuccess<ISignInSuccess> | IAppError<string>> } - Promise resolving to service result
+ * @returns { Promise<IAppSuccess<IPostRefreshTokenSucess> | IAppError<string>> } - Promise resolving to service result
  */
-export const postRefreshTokenService = async (request: Request, nextFunction: NextFunction): Promise<IResponseSuccess<IRefreshTokenSucess>> => {
+export const postRefreshTokenService = async (request: Request, nextFunction: NextFunction): Promise<IResponseSuccess<IPostRefreshTokenSucess>> => {
     try {
         // Step 1: Get refreshToken in request body.
-        const { refreshToken } = request.body as IRequestBodyRefreshToken;
+        const { refreshToken } = request.body as IRequestBodyPostRefreshToken;
         if (!refreshToken) {
             throw ResponseError({
                 statusCode: 400,
@@ -75,22 +75,22 @@ export const postRefreshTokenService = async (request: Request, nextFunction: Ne
         // Step 4: Generate a new accessToken (refer sheet postSignIn)
         const user = users[0];
         const accessToken = await generateAccessToken(request, nextFunction, user);
-        return ResponseSuccess<ISignInSuccess>({ statusCode: 200, data: { user: { userId: user.userId }, accessToken, refreshToken } });
+        return ResponseSuccess<IPostRefreshTokenSucess>({ statusCode: 200, data: { user: { userId: user.userId }, accessToken, refreshToken } });
     } catch (error) {
         throw error;
     }
 };
 
 /**
- * Sign In Service
+ * Post Sign In Service
  * @param {Request} request - Express Request
  * @param {NextFunction} nextFunction - Express Next Function
- * @returns { Promise<IAppSuccess<ISignInSuccess> | IAppError<string>> } - Promise resolving to service result
+ * @returns { Promise<IAppSuccess<IPostSignInSuccess> | IAppError<string>> } - Promise resolving to service result
  */
-export const postSignInService = async (request: Request, nextFunction: NextFunction): Promise<IResponseSuccess<ISignInSuccess>> => {
+export const postSignInService = async (request: Request, nextFunction: NextFunction): Promise<IResponseSuccess<IPostSignInSuccess>> => {
     try {
         // get value in request body
-        const { username, password } = request.body as IRequestBodySignIn;
+        const { username, password } = request.body as IRequestBodyPostSignIn;
         const messages = [];
 
         // Step 1: Get and validate the request body.
@@ -134,22 +134,22 @@ export const postSignInService = async (request: Request, nextFunction: NextFunc
         const accessToken = await generateAccessToken(request, nextFunction, user);
         const refreshToken = await generateRefreshToken(request, nextFunction, user);
 
-        return ResponseSuccess<ISignInSuccess>({ statusCode: 200, data: { user: { userId: user.userId }, accessToken, refreshToken } });
+        return ResponseSuccess<IPostSignInSuccess>({ statusCode: 200, data: { user: { userId: user.userId }, accessToken, refreshToken } });
     } catch (error) {
         throw error;
     }
 };
 
 /**
- * Sign Up Service
+ * Post Sign Up Service
  * @param {Request} request - Express Request
  * @param {NextFunction} nextFunction - Express Next Function
- * @returns { Promise<IAppSuccess<ISignInSuccess> | IAppError<string>> } - Promise resolving to service result
+ * @returns { Promise<IAppSuccess<IPostSignUpSuccess> | IAppError<string>> } - Promise resolving to service result
  */
-export const postSignUpService = async (request: Request, nextFunction: NextFunction) => {
+export const postSignUpService = async (request: Request, nextFunction: NextFunction): Promise<IResponseSuccess<IPostSignUpSuccess>> => {
     try {
         // Step 2: Validate query parameters.
-        const { firstName, lastName, age, username, password, email, phoneNumber, address, roleIds } = request.body as IRequestBodySignUp;
+        const { firstName, lastName, age, username, password, email, phoneNumber, address, roleIds } = request.body as IRequestBodyPostSignUp;
         let messages = [];
 
         // Step 2-1: Check the required query parameters.
@@ -289,7 +289,7 @@ export const postSignUpService = async (request: Request, nextFunction: NextFunc
         if (messages.length > 0) {
             throw ResponseError({
                 statusCode: 400,
-                errorCode: ERROR_LIST.REQUEST_BODY_PARAMS_SIGN_UP_REQUIRED_ERROR.ERROR_CODE,
+                errorCode: ERROR_LIST.REQUEST_BODY_PARAMS_SIGN_UP_ERROR.ERROR_CODE,
                 errorMessages: messages,
             });
         }
@@ -354,7 +354,7 @@ export const postSignUpService = async (request: Request, nextFunction: NextFunc
             // release transaction
             await releaseTransaction(transaction);
 
-            return ResponseSuccess<ISignUpSuccess>({ statusCode: 201, data: { user: { userId: newUserId }, message: "User registration successful" } });
+            return ResponseSuccess<IPostSignUpSuccess>({ statusCode: 201, data: { user: { userId: newUserId }, message: "User registration successful" } });
         } catch (error) {
             await rollbackTransaction(transaction);
             await releaseTransaction(transaction);

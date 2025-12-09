@@ -1,3 +1,6 @@
+//libs
+import { PoolConnection } from "mysql2/typings/mysql/lib/PoolConnection";
+
 // database
 import { queryPromise, transactionQueryPromise } from "../connection-pool";
 import {
@@ -20,7 +23,6 @@ import { ERROR_LIST } from "../../constants/error.constant";
 
 // utils
 import { ResponseError } from "../../utils/common";
-import { PoolConnection } from "mysql2/typings/mysql/lib/PoolConnection";
 
 /**
  * get the user information by user id
@@ -133,8 +135,8 @@ export const getRoleInformationByRoleId = async (roleId: string): Promise<GetRol
     } catch (error) {
         throw ResponseError({
             statusCode: 500,
-            errorCode: ERROR_LIST.QUERY_GET_ROLE_INFOR_BY_ID_ERROR.ERROR_CODE,
-            errorMessages: [ERROR_LIST.QUERY_GET_ROLE_INFOR_BY_ID_ERROR.ERROR_MESSAGE()],
+            errorCode: ERROR_LIST.QUERY_GET_ROLE_INFOR_BY_ROLE_ID_ERROR.ERROR_CODE,
+            errorMessages: [ERROR_LIST.QUERY_GET_ROLE_INFOR_BY_ROLE_ID_ERROR.ERROR_MESSAGE()],
             errorDetails: [
                 {
                     functionName: "getRoleInformationByRoleId",
@@ -183,16 +185,16 @@ export const insertUserInformation = async (
                 USER_PHONE_NUMBER,
                 USER_ADDRESS,
                 USER_DELETE_FLG,
-                USER_VERIFY,
-                USER_VERIFY_CODE,
-                USER_VERIFY_CODE_EXPIRATION,
+                USER_VERIFIED,
+                USER_VERIFICATION_CODE,
+                USER_VERIFICATION_CODE_EXPIRATION_TIME,
                 USER_CREATED_BY,
                 USER_CREATED_AT,
                 USER_CREATED_AT_SYSTEM,
                 USER_UPDATED_BY,
                 USER_UPDATED_AT,
                 USER_UPDATED_AT_SYSTEM)
-            VALUES (?, ?, ?, ?, ?, SHA(?), ?, ?, ?, '0', '0', NULL, NULL, ?, ?, ?, ?, ?, ?);
+            VALUES (?, ?, ?, ?, ?, SHA2(?, 256), ?, ?, ?, '0', '0', NULL, NULL, ?, ?, ?, ?, ?, ?);
         `;
 
         const rows = await transactionQueryPromise<InsertUserInformationDTO, InsertUserInformationValues>(transaction, sqlInsert, [
@@ -261,7 +263,7 @@ export const insertRoleRelationshipInformation = async (
 ): Promise<InsertRoleRelationshipInformationDTO[]> => {
     try {
         const sqlInsert = `
-            INSERT INTO R_USER_ROLES (
+            INSERT INTO R_USER_ROLE (
                 USER_ID,
                 ROLE_ID,
                 DELETE_FLG,

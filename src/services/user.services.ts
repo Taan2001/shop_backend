@@ -1,33 +1,53 @@
 // libs
 import { Request, NextFunction } from "express";
+import dayjs from "dayjs";
 
 // interfaces
-import { IRequestpPathUserDetail, IRequestQueryUsers, IUserDetailSuccess, IUsersSuccess } from "../interfaces/user.interface";
+import {
+    IRequestpPathGetUserDetail,
+    IRequestQueryGetUsers,
+    IGetUserDetailSuccess,
+    IGetUsersSuccess,
+    IPostUserDetailSuccess,
+    IRequestBodyPostUserDetail,
+    IRequestpPathPostUserDetail,
+} from "../interfaces/user.interface";
 import { IResponseSuccess } from "../interfaces/app.interface";
 
 // utils
 import { ResponseError, ResponseSuccess } from "../utils/common";
 import { isIntegerStringRegex } from "../utils/number";
+import { isValidEmail, isVietnamesePhoneNumber } from "../utils/helpers";
 
 // constants
 import { ERROR_LIST } from "../constants/error.constant";
 import { FIELD_SORT_LIST_IN_GET_USERS } from "../constants/sort.constant";
-import { ROLES } from "../constants/common.constant";
+import { ADMIN_CONST, ROLES } from "../constants/common.constant";
 
 // database
-import { countGetUsers, getUserDetailInformationByUserId, getUserRoleInformationByUserId, getUsers } from "../database/repositories/user.repository";
-import { getUserInformationByUserId } from "../database/repositories/auth.repository";
+import { commitTransaction, createTransactionConnection, releaseTransaction, rollbackTransaction } from "../database/connection-pool";
+import {
+    countGetUsers,
+    deleteRoleForUser,
+    getUserDetailInformationByUserId,
+    getUserRoleInformationByUserId,
+    getUsers,
+    insertNewRolesForUser,
+    updateUserInformation,
+} from "../database/repositories/user.repository";
+import { getRoleInformationByRoleId, getUserInformationByUserId, insertRoleRelationshipInformation } from "../database/repositories/auth.repository";
+import { get } from "http";
 
 /**
- * Users Service
+ * Get Users Service
  * @param {Request} request - Express Request
  * @param {NextFunction} nextFunction - Express Next Function
- * @returns { Promise<IAppSuccess<IUsersSuccess> | IAppError<string>> } - Promise resolving to service result
+ * @returns { Promise<IAppSuccess<IGetUsersSuccess> | IAppError<string>> } - Promise resolving to service result
  */
-export const getUsersService = async (request: Request, nextFunction: NextFunction): Promise<IResponseSuccess<IUsersSuccess>> => {
+export const getUsersService = async (request: Request, nextFunction: NextFunction): Promise<IResponseSuccess<IGetUsersSuccess>> => {
     try {
         // Step 2: Validate query parameters.
-        const { limit, currentPage, sortField, sortType } = request.query as unknown as IRequestQueryUsers;
+        const { limit, currentPage, sortField, sortType } = request.query as unknown as IRequestQueryGetUsers;
         const messages: string[] = [];
         const params = [];
 
@@ -86,9 +106,27 @@ export const getUsersService = async (request: Request, nextFunction: NextFuncti
         }
 
         // Step 3: Check Role(refer Common sheet)
-        const userRoles = await getUserRoleInformationByUserId(request.currentUser.userId);
+        // -----> Step 3-1: Get current user information.
+        const currentUsers = await getUserInformationByUserId(request.currentUser.userId);
+        if (currentUsers.length !== 1) {
+            throw ResponseError({
+                statusCode: 401,
+                errorCode: ERROR_LIST.UNAUTHENTICATED_USER_ERROR.ERROR_CODE,
+                errorMessages: [ERROR_LIST.UNAUTHENTICATED_USER_ERROR.ERROR_MESSAGE()],
+            });
+        }
+        if (currentUsers.length === 1 && currentUsers[0].deleteFlg !== 0) {
+            throw ResponseError({
+                statusCode: 401,
+                errorCode: ERROR_LIST.UNAVAILABLE_USER_ERROR.ERROR_CODE,
+                errorMessages: [ERROR_LIST.UNAVAILABLE_USER_ERROR.ERROR_MESSAGE()],
+            });
+        }
+        // -----> Step 3-2: Get the role information of the current user.
+        const roles = await getUserRoleInformationByUserId(request.currentUser.userId);
 
-        if (userRoles.length === 0 || !userRoles.map((role) => role.roleId).includes(ROLES.ADMIN)) {
+        // -----> Step 3-3: Check role permission.
+        if (!roles.some((role) => role.roleId === ROLES.ADMIN)) {
             throw ResponseError({
                 statusCode: 400,
                 errorCode: ERROR_LIST.UNAVAILABLE_USER_ROLE_ERROR.ERROR_CODE,
@@ -126,7 +164,7 @@ export const getUsersService = async (request: Request, nextFunction: NextFuncti
             });
         }
 
-        return ResponseSuccess<IUsersSuccess>({
+        return ResponseSuccess<IGetUsersSuccess>({
             statusCode: 200,
             data: {
                 users,
@@ -144,38 +182,58 @@ export const getUsersService = async (request: Request, nextFunction: NextFuncti
 };
 
 /**
- * User Detail Service
+ * Get User Detail Service
  * @param {Request} request - Express Request
  * @param {NextFunction} nextFunction - Express Next Function
- * @returns { Promise<IAppSuccess<ISignInSuccess> | IAppError<string>> } - Promise resolving to service result
+ * @returns { Promise<IAppSuccess<IGetUserDetailSuccess> | IAppError<string>> } - Promise resolving to service result
  */
-export const getUserDetailService = async (request: Request, nextFunction: NextFunction): Promise<IResponseSuccess<IUserDetailSuccess>> => {
+export const getUserDetailService = async (request: Request, nextFunction: NextFunction): Promise<IResponseSuccess<IGetUserDetailSuccess>> => {
     try {
         // Step 2: Validate path parameters.
-        const { userId } = request.params as unknown as IRequestpPathUserDetail;
+        const { userId } = request.params as unknown as IRequestpPathGetUserDetail;
         if (!userId) {
             throw ResponseError({
                 statusCode: 400,
                 errorCode: ERROR_LIST.REQUEST_PATH_PARAMS_GET_USER_DETAIL_ERROR.ERROR_CODE,
                 errorMessages: [ERROR_LIST.REQUEST_PATH_PARAMS_GET_USER_DETAIL_ERROR.ERROR_MESSAGE("userId")],
+                errorParams: [userId],
             });
         }
+
         // Step 3: Check Role(refer Common sheet)
-        const users = await getUserInformationByUserId(request.currentUser.userId);
-        if (users.length !== 1) {
-            throw ResponseError({
-                statusCode: 401,
-                errorCode: ERROR_LIST.UNAUTHENTICATED_USER_ERROR.ERROR_CODE,
-                errorMessages: [ERROR_LIST.UNAUTHENTICATED_USER_ERROR.ERROR_MESSAGE()],
-            });
+        if (request.currentUser.userId !== userId) {
+            // -----> Step 3-1: Get current user information.
+            const users = await getUserInformationByUserId(request.currentUser.userId);
+            if (users.length !== 1) {
+                throw ResponseError({
+                    statusCode: 401,
+                    errorCode: ERROR_LIST.UNAUTHENTICATED_USER_ERROR.ERROR_CODE,
+                    errorMessages: [ERROR_LIST.UNAUTHENTICATED_USER_ERROR.ERROR_MESSAGE()],
+                    errorParams: [request.currentUser.userId],
+                });
+            }
+            if (users.length === 1 && users[0].deleteFlg !== 0) {
+                throw ResponseError({
+                    statusCode: 401,
+                    errorCode: ERROR_LIST.UNAVAILABLE_USER_ERROR.ERROR_CODE,
+                    errorMessages: [ERROR_LIST.UNAVAILABLE_USER_ERROR.ERROR_MESSAGE()],
+                    errorParams: [request.currentUser.userId],
+                });
+            }
+            // -----> Step 3-2: Get the role information of the current user.
+            const currentUserRoles = await getUserRoleInformationByUserId(request.currentUser.userId);
+
+            // -----> Step 3-3: Check role permission.
+            if (!currentUserRoles.some((role) => role.roleId === ROLES.ADMIN)) {
+                throw ResponseError({
+                    statusCode: 400,
+                    errorCode: ERROR_LIST.UNAVAILABLE_USER_ROLE_ERROR.ERROR_CODE,
+                    errorMessages: [ERROR_LIST.UNAVAILABLE_USER_ROLE_ERROR.ERROR_MESSAGE()],
+                    errorParams: [request.currentUser.userId],
+                });
+            }
         }
-        if (users.length === 1 && users[0].deleteFlg !== 0) {
-            throw ResponseError({
-                statusCode: 401,
-                errorCode: ERROR_LIST.UNAVAILABLE_USER_ERROR.ERROR_CODE,
-                errorMessages: [ERROR_LIST.UNAVAILABLE_USER_ERROR.ERROR_MESSAGE()],
-            });
-        }
+
         // Step 4: Get the user detail information
         const userDetails = await getUserDetailInformationByUserId(userId);
 
@@ -195,7 +253,254 @@ export const getUserDetailService = async (request: Request, nextFunction: NextF
             })),
         };
 
-        return ResponseSuccess<IUserDetailSuccess>({ statusCode: 200, data: { user: userDetail } });
+        return ResponseSuccess<IGetUserDetailSuccess>({ statusCode: 200, data: { user: userDetail } });
+    } catch (error) {
+        throw error;
+    }
+};
+
+/**
+ * Post User Detail Service
+ * @param {Request} request - Express Request
+ * @param {NextFunction} nextFunction - Express Next Function
+ * @returns { Promise<IAppSuccess<IPostUserDetailSuccess> | IAppError<string>> } - Promise resolving to service result
+ */
+export const postUserDetailService = async (request: Request, nextFunction: NextFunction): Promise<IResponseSuccess<IPostUserDetailSuccess>> => {
+    try {
+        // Step 2: Validate path parameters.
+        const { userId } = request.params as unknown as IRequestpPathPostUserDetail;
+
+        if (!userId) {
+            throw ResponseError({
+                statusCode: 400,
+                errorCode: ERROR_LIST.REQUEST_PATH_PARAMS_POST_USER_DETAIL_ERROR.ERROR_CODE,
+                errorMessages: [ERROR_LIST.REQUEST_PATH_PARAMS_POST_USER_DETAIL_ERROR.ERROR_MESSAGE("userId")],
+                errorParams: [userId],
+            });
+        }
+
+        // Step 3: Check Role(refer Common sheet)
+        const currentUserRoles = await getUserRoleInformationByUserId(request.currentUser.userId);
+        if (request.currentUser.userId !== userId) {
+            // Step 3-1: Get current user information.
+            const users = await getUserInformationByUserId(request.currentUser.userId);
+            if (users.length !== 1) {
+                throw ResponseError({
+                    statusCode: 401,
+                    errorCode: ERROR_LIST.UNAUTHENTICATED_USER_ERROR.ERROR_CODE,
+                    errorMessages: [ERROR_LIST.UNAUTHENTICATED_USER_ERROR.ERROR_MESSAGE()],
+                    errorParams: [request.currentUser.userId],
+                });
+            }
+            if (users.length === 1 && users[0].deleteFlg !== 0) {
+                throw ResponseError({
+                    statusCode: 401,
+                    errorCode: ERROR_LIST.UNAVAILABLE_USER_ERROR.ERROR_CODE,
+                    errorMessages: [ERROR_LIST.UNAVAILABLE_USER_ERROR.ERROR_MESSAGE()],
+                    errorParams: [request.currentUser.userId],
+                });
+            }
+            // Step 3-2: Check role permission.
+            if (!currentUserRoles.some((role) => role.roleId === ROLES.ADMIN)) {
+                throw ResponseError({
+                    statusCode: 400,
+                    errorCode: ERROR_LIST.UNAVAILABLE_USER_ROLE_ERROR.ERROR_CODE,
+                    errorMessages: [ERROR_LIST.UNAVAILABLE_USER_ROLE_ERROR.ERROR_MESSAGE()],
+                    errorParams: [request.currentUser.userId],
+                });
+            }
+        }
+        // Step 4: Validate path parameters.
+        // Step 4-1: Check the required query parameters.
+        const { firstName, lastName, age, email, phoneNumber, address, roleIds } = request.body as IRequestBodyPostUserDetail;
+        let messages = [];
+
+        if (firstName === undefined) {
+            messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_USER_DETAIL_REQUIRED_ERROR.ERROR_MESSAGE("firstName"));
+        }
+        if (lastName === undefined) {
+            messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_USER_DETAIL_REQUIRED_ERROR.ERROR_MESSAGE("lastName"));
+        }
+        if (age === undefined) {
+            messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_USER_DETAIL_REQUIRED_ERROR.ERROR_MESSAGE("age"));
+        }
+        if (email === undefined) {
+            messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_USER_DETAIL_REQUIRED_ERROR.ERROR_MESSAGE("email"));
+        }
+        if (phoneNumber === undefined) {
+            messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_USER_DETAIL_REQUIRED_ERROR.ERROR_MESSAGE("phoneNumber"));
+        }
+        if (address === undefined) {
+            messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_USER_DETAIL_REQUIRED_ERROR.ERROR_MESSAGE("address"));
+        }
+        if (roleIds === undefined || !Array.isArray(roleIds) || roleIds.length === 0) {
+            messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_USER_DETAIL_REQUIRED_ERROR.ERROR_MESSAGE("roleIds"));
+        }
+
+        if (messages.length > 0) {
+            throw ResponseError({
+                statusCode: 400,
+                errorCode: ERROR_LIST.REQUEST_BODY_PARAMS_POST_USER_DETAIL_REQUIRED_ERROR.ERROR_CODE,
+                errorMessages: messages,
+            });
+        }
+
+        // -----> Step 2-2: Check the data of the query parameters.
+        // firstName
+        if (typeof firstName !== "string") {
+            messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_USER_DETAIL_ERROR.ERROR_MESSAGE("firstName", "dataType"));
+        }
+        if (typeof firstName === "string" && firstName.length === 0) {
+            messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_USER_DETAIL_ERROR.ERROR_MESSAGE("firstName", "minLength"));
+        }
+        if (typeof firstName === "string" && firstName.length > 12) {
+            messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_USER_DETAIL_ERROR.ERROR_MESSAGE("firstName", "maxLength"));
+        }
+        // lastName
+        if (typeof lastName !== "string") {
+            messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_USER_DETAIL_ERROR.ERROR_MESSAGE("lastName", "dataType"));
+        }
+        if (typeof lastName === "string" && lastName.length === 0) {
+            messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_USER_DETAIL_ERROR.ERROR_MESSAGE("lastName", "minLength"));
+        }
+        if (typeof lastName === "string" && lastName.length > 36) {
+            messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_USER_DETAIL_ERROR.ERROR_MESSAGE("lastName", "maxLength"));
+        }
+        // age
+        if (typeof age !== "number") {
+            messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_USER_DETAIL_ERROR.ERROR_MESSAGE("age", "dataType"));
+        }
+        if (typeof age === "number" && age < 15) {
+            messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_USER_DETAIL_ERROR.ERROR_MESSAGE("age", "minValue"));
+        }
+        if (typeof age === "number" && age > 120) {
+            messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_USER_DETAIL_ERROR.ERROR_MESSAGE("age", "maxValue"));
+        }
+        // phoneNumber
+        if (isVietnamesePhoneNumber(phoneNumber) === false) {
+            messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_USER_DETAIL_ERROR.ERROR_MESSAGE("phoneNumber", "dataType"));
+        }
+        // email
+        if (isValidEmail(email) === false) {
+            messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_USER_DETAIL_ERROR.ERROR_MESSAGE("email", "dataType"));
+        }
+        if (typeof email === "string" && email.length > 64) {
+            messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_USER_DETAIL_ERROR.ERROR_MESSAGE("email", "maxLength"));
+        }
+        // address
+        if (typeof address !== "string") {
+            messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_USER_DETAIL_ERROR.ERROR_MESSAGE("address", "dataType"));
+        }
+        if (typeof address === "string" && address.length === 0) {
+            messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_USER_DETAIL_ERROR.ERROR_MESSAGE("address", "minLength"));
+        }
+        if (typeof address === "string" && address.length > 64) {
+            messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_USER_DETAIL_ERROR.ERROR_MESSAGE("address", "maxLength"));
+        }
+        // roleIds
+        if (!currentUserRoles.some((role) => role.roleId === ROLES.ADMIN)) {
+            if (Array.isArray(roleIds) && roleIds?.length > 0 && roleIds.some((roleId) => typeof roleId !== "string")) {
+                messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_USER_DETAIL_ERROR.ERROR_MESSAGE("roleIds", "dataType"));
+            }
+
+            let isRoleError = false;
+            if (Array.isArray(roleIds) && roleIds.length > 0 && roleIds.every((roleId) => typeof roleId === "string")) {
+                const promiseRoles = roleIds.map(async (roleId) => {
+                    const roles = await getRoleInformationByRoleId(roleId);
+                    console.log("roles:", roles);
+                    if (roles.length !== 1) {
+                        isRoleError = true;
+                    }
+                });
+                await Promise.all(promiseRoles);
+            }
+
+            if (isRoleError) {
+                messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_USER_DETAIL_ERROR.ERROR_MESSAGE("roleIds", "exist in database"));
+            }
+
+            if (new Set(roleIds).size !== roleIds.length) {
+                messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_USER_DETAIL_ERROR.ERROR_MESSAGE("roleIds", "duplicate"));
+            }
+
+            // if (currentUserRoles.some((role) => role.roleId === ROLES.ADMIN) && !roleIds.includes(ROLES.ADMIN)) {
+            //     messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_USER_DETAIL_ERROR.ERROR_MESSAGE("roleIds", "admin role"));
+            // }
+
+            if (request.currentUser.userId === ADMIN_CONST && !roleIds.includes(ROLES.ADMIN)) {
+                messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_USER_DETAIL_ERROR.ERROR_MESSAGE("roleIds", "admin role default"));
+            }
+        }
+
+        if (messages.length > 0) {
+            throw ResponseError({
+                statusCode: 400,
+                errorCode: ERROR_LIST.REQUEST_BODY_PARAMS_POST_USER_DETAIL_ERROR.ERROR_CODE,
+                errorMessages: messages,
+            });
+        }
+
+        // Step 5: Calculate the roleIds to be inserted.
+        const newRoleIds = roleIds;
+        const oldRoles = (await getUserRoleInformationByUserId(userId))?.map((role) => role.roleId) || [];
+
+        const roleIdsToAdd = newRoleIds.filter((roleId) => !oldRoles.includes(roleId));
+        const roleIdsToDelete = oldRoles.filter((roleId) => !newRoleIds.includes(roleId));
+
+        // Step 6: Insert Data
+        const timestamp = Date.now();
+        const createdDate = dayjs(timestamp).format("YYYY-MM-DD H:mm:ss");
+        const updatedDate = dayjs(timestamp).format("YYYY-MM-DD H:mm:ss");
+
+        // create transaction
+        const transaction = await createTransactionConnection();
+        try {
+            await updateUserInformation(transaction, {
+                userId,
+                firstName,
+                lastName,
+                age,
+                email,
+                phoneNumber,
+                address,
+                updateBy: request.currentUser.userId,
+                updatedDate,
+                timestamp,
+            });
+
+            if (roleIdsToDelete.length > 0) {
+                await deleteRoleForUser(transaction, {
+                    userId,
+                    roleIds: roleIdsToDelete,
+                });
+            }
+
+            if (roleIdsToAdd.length > 0) {
+                await insertNewRolesForUser(transaction, {
+                    roleIds: roleIdsToAdd,
+                    userId,
+                    insertBy: request.currentUser.userId,
+                    createdDate,
+                    updatedDate,
+                    timestamp,
+                });
+            }
+
+            // commit transaction
+            await commitTransaction(transaction);
+
+            // release transaction
+            await releaseTransaction(transaction);
+
+            return ResponseSuccess<IPostUserDetailSuccess>({
+                statusCode: 201,
+                data: { messages: ["User update successful"] },
+            });
+        } catch (error) {
+            await rollbackTransaction(transaction);
+            await releaseTransaction(transaction);
+            throw error;
+        }
     } catch (error) {
         throw error;
     }

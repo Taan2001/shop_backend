@@ -1,4 +1,4 @@
-export interface IRequestBodySignUp {
+export interface IRequestBodyPostSignUp {
     firstName: string;
     lastName: string;
     age: number;
@@ -10,26 +10,26 @@ export interface IRequestBodySignUp {
     roleIds: string[];
 }
 
-export interface ISignUpSuccess {
+export interface IPostSignUpSuccess {
     user: {
         userId: string;
     };
     message: string;
 }
 
-export interface IRequestBodyRefreshToken {
+export interface IRequestBodyPostRefreshToken {
     refreshToken: string;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface IRefreshTokenSucess extends ISignInSuccess {}
+export interface IPostRefreshTokenSucess extends IPostSignInSuccess {}
 
-export interface IRequestBodySignIn {
+export interface IRequestBodyPostSignIn {
     username: string;
     password: string;
 }
 
-export interface ISignInSuccess {
+export interface IPostSignInSuccess {
     user: {
         userId: string;
     };
