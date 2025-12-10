@@ -342,16 +342,7 @@ export const insertNewRolesForUser = async (
             .join(",");
 
         const sqlInsert = `
-            INSERT INTO R_USER_ROLE (
-                USER_ID,
-                ROLE_ID,
-                DELETE_FLG,
-                CREATED_BY,
-                CREATED_AT,
-                CREATED_AT_SYSTEM,
-                UPDATED_BY,
-                UPDATED_AT,
-                UPDATED_AT_SYSTEM)
+            INSERT INTO R_USER_ROLE ( USER_ID, ROLE_ID, DELETE_FLG, CREATED_BY, CREATED_AT, CREATED_AT_SYSTEM, UPDATED_BY, UPDATED_AT, UPDATED_AT_SYSTEM)
             VALUES ${valueClauses};
         `;
 
