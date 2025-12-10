@@ -4,4 +4,6 @@ export const ROLES = {
     USER: "99999999-0003-0000-1111-999999999999",
 };
 
+export type RoleKey = keyof typeof ROLES;
+
 export const ADMIN_CONST = "00000001-0000-1111-2222-999999999999";

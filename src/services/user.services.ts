@@ -189,7 +189,7 @@ export const getUsersService = async (request: Request, nextFunction: NextFuncti
  */
 export const getUserDetailService = async (request: Request, nextFunction: NextFunction): Promise<IResponseSuccess<IGetUserDetailSuccess>> => {
     try {
-        // Step 2: Validate path parameters.
+        // Step 3: Validate path parameters.
         const { userId } = request.params as unknown as IRequestpPathGetUserDetail;
         if (!userId) {
             throw ResponseError({
@@ -200,41 +200,17 @@ export const getUserDetailService = async (request: Request, nextFunction: NextF
             });
         }
 
-        // Step 3: Check Role(refer Common sheet)
-        if (request.currentUser.userId !== userId) {
-            // -----> Step 3-1: Get current user information.
-            const users = await getUserInformationByUserId(request.currentUser.userId);
-            if (users.length !== 1) {
-                throw ResponseError({
-                    statusCode: 401,
-                    errorCode: ERROR_LIST.UNAUTHENTICATED_USER_ERROR.ERROR_CODE,
-                    errorMessages: [ERROR_LIST.UNAUTHENTICATED_USER_ERROR.ERROR_MESSAGE()],
-                    errorParams: [request.currentUser.userId],
-                });
-            }
-            if (users.length === 1 && users[0].deleteFlg !== 0) {
-                throw ResponseError({
-                    statusCode: 401,
-                    errorCode: ERROR_LIST.UNAVAILABLE_USER_ERROR.ERROR_CODE,
-                    errorMessages: [ERROR_LIST.UNAVAILABLE_USER_ERROR.ERROR_MESSAGE()],
-                    errorParams: [request.currentUser.userId],
-                });
-            }
-            // -----> Step 3-2: Get the role information of the current user.
-            const currentUserRoles = await getUserRoleInformationByUserId(request.currentUser.userId);
-
-            // -----> Step 3-3: Check role permission.
-            if (!currentUserRoles.some((role) => role.roleId === ROLES.ADMIN)) {
-                throw ResponseError({
-                    statusCode: 400,
-                    errorCode: ERROR_LIST.UNAVAILABLE_USER_ROLE_ERROR.ERROR_CODE,
-                    errorMessages: [ERROR_LIST.UNAVAILABLE_USER_ROLE_ERROR.ERROR_MESSAGE()],
-                    errorParams: [request.currentUser.userId],
-                });
-            }
+        // Step 4: Check current user
+        if (!request.currentUser.roleIds.includes(ROLES.ADMIN) && request.currentUser.userId !== userId) {
+            throw ResponseError({
+                statusCode: 401,
+                errorCode: ERROR_LIST.UNAVAILABLE_USER_ROLE_ERROR.ERROR_CODE,
+                errorMessages: [ERROR_LIST.UNAVAILABLE_USER_ROLE_ERROR.ERROR_MESSAGE()],
+                errorParams: [userId],
+            });
         }
 
-        // Step 4: Get the user detail information
+        // Step 5: Get the user detail information
         const userDetails = await getUserDetailInformationByUserId(userId);
 
         if (userDetails.length === 0) {
@@ -267,7 +243,7 @@ export const getUserDetailService = async (request: Request, nextFunction: NextF
  */
 export const postUserDetailService = async (request: Request, nextFunction: NextFunction): Promise<IResponseSuccess<IPostUserDetailSuccess>> => {
     try {
-        // Step 2: Validate path parameters.
+        // Step 3: Validate path parameters.
         const { userId } = request.params as unknown as IRequestpPathPostUserDetail;
 
         if (!userId) {
@@ -279,39 +255,18 @@ export const postUserDetailService = async (request: Request, nextFunction: Next
             });
         }
 
-        // Step 3: Check Role(refer Common sheet)
-        const currentUserRoles = await getUserRoleInformationByUserId(request.currentUser.userId);
-        if (request.currentUser.userId !== userId) {
-            // Step 3-1: Get current user information.
-            const users = await getUserInformationByUserId(request.currentUser.userId);
-            if (users.length !== 1) {
-                throw ResponseError({
-                    statusCode: 401,
-                    errorCode: ERROR_LIST.UNAUTHENTICATED_USER_ERROR.ERROR_CODE,
-                    errorMessages: [ERROR_LIST.UNAUTHENTICATED_USER_ERROR.ERROR_MESSAGE()],
-                    errorParams: [request.currentUser.userId],
-                });
-            }
-            if (users.length === 1 && users[0].deleteFlg !== 0) {
-                throw ResponseError({
-                    statusCode: 401,
-                    errorCode: ERROR_LIST.UNAVAILABLE_USER_ERROR.ERROR_CODE,
-                    errorMessages: [ERROR_LIST.UNAVAILABLE_USER_ERROR.ERROR_MESSAGE()],
-                    errorParams: [request.currentUser.userId],
-                });
-            }
-            // Step 3-2: Check role permission.
-            if (!currentUserRoles.some((role) => role.roleId === ROLES.ADMIN)) {
-                throw ResponseError({
-                    statusCode: 400,
-                    errorCode: ERROR_LIST.UNAVAILABLE_USER_ROLE_ERROR.ERROR_CODE,
-                    errorMessages: [ERROR_LIST.UNAVAILABLE_USER_ROLE_ERROR.ERROR_MESSAGE()],
-                    errorParams: [request.currentUser.userId],
-                });
-            }
+        // Step 4: Check current user.
+        if (!request.currentUser.roleIds.includes(ROLES.ADMIN) && request.currentUser.userId !== userId) {
+            throw ResponseError({
+                statusCode: 401,
+                errorCode: ERROR_LIST.UNAVAILABLE_USER_ROLE_ERROR.ERROR_CODE,
+                errorMessages: [ERROR_LIST.UNAVAILABLE_USER_ROLE_ERROR.ERROR_MESSAGE()],
+                errorParams: [userId],
+            });
         }
-        // Step 4: Validate path parameters.
-        // Step 4-1: Check the required query parameters.
+
+        // Step 5: Validate path parameters.
+        // Step 5-1: Check the required query parameters.
         const { firstName, lastName, age, email, phoneNumber, address, roleIds } = request.body as IRequestBodyPostUserDetail;
         let messages = [];
 
@@ -345,7 +300,7 @@ export const postUserDetailService = async (request: Request, nextFunction: Next
             });
         }
 
-        // -----> Step 2-2: Check the data of the query parameters.
+        // -----> Step 5-2: Check the data of the query parameters.
         // firstName
         if (typeof firstName !== "string") {
             messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_USER_DETAIL_ERROR.ERROR_MESSAGE("firstName", "dataType"));
@@ -398,7 +353,7 @@ export const postUserDetailService = async (request: Request, nextFunction: Next
             messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_USER_DETAIL_ERROR.ERROR_MESSAGE("address", "maxLength"));
         }
         // roleIds
-        if (!currentUserRoles.some((role) => role.roleId === ROLES.ADMIN)) {
+        if (request.currentUser.roleIds.includes(ROLES.ADMIN)) {
             if (Array.isArray(roleIds) && roleIds?.length > 0 && roleIds.some((roleId) => typeof roleId !== "string")) {
                 messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_USER_DETAIL_ERROR.ERROR_MESSAGE("roleIds", "dataType"));
             }
@@ -422,10 +377,6 @@ export const postUserDetailService = async (request: Request, nextFunction: Next
                 messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_USER_DETAIL_ERROR.ERROR_MESSAGE("roleIds", "duplicate"));
             }
 
-            // if (currentUserRoles.some((role) => role.roleId === ROLES.ADMIN) && !roleIds.includes(ROLES.ADMIN)) {
-            //     messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_USER_DETAIL_ERROR.ERROR_MESSAGE("roleIds", "admin role"));
-            // }
-
             if (userId === ADMIN_CONST && !roleIds.includes(ROLES.ADMIN)) {
                 messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_USER_DETAIL_ERROR.ERROR_MESSAGE("roleIds", "admin role default"));
             }
@@ -439,14 +390,14 @@ export const postUserDetailService = async (request: Request, nextFunction: Next
             });
         }
 
-        // Step 5: Calculate the roleIds to be inserted.
-        const newRoleIds = roleIds;
-        const oldRoles = (await getUserRoleInformationByUserId(userId))?.map((role) => role.roleId) || [];
+        // Step 6: Calculate the roleIds to be inserted.
+        const oldRoleIds = (await getUserRoleInformationByUserId(userId))?.map((role) => role.roleId) || [];
+        const newRoleIds = request.currentUser.roleIds.includes(ROLES.ADMIN) ? roleIds : oldRoleIds;
 
-        const roleIdsToAdd = newRoleIds.filter((roleId) => !oldRoles.includes(roleId));
-        const roleIdsToDelete = oldRoles.filter((roleId) => !newRoleIds.includes(roleId));
+        const roleIdsToAdd = newRoleIds.filter((roleId) => !oldRoleIds.includes(roleId));
+        const roleIdsToDelete = oldRoleIds.filter((roleId) => !newRoleIds.includes(roleId));
 
-        // Step 6: Insert Data
+        // Step 7: Update Data
         const timestamp = Date.now();
         const createdDate = dayjs(timestamp).format("YYYY-MM-DD H:mm:ss");
         const updatedDate = dayjs(timestamp).format("YYYY-MM-DD H:mm:ss");
@@ -492,7 +443,7 @@ export const postUserDetailService = async (request: Request, nextFunction: Next
             await releaseTransaction(transaction);
 
             return ResponseSuccess<IPostUserDetailSuccess>({
-                statusCode: 201,
+                statusCode: 204,
                 data: { messages: ["User update successful"] },
             });
         } catch (error) {

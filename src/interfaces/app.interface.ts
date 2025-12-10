@@ -42,4 +42,6 @@ export interface IRequestUserInformation {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface ICurrentUser extends IRequestUserInformation {}
+export interface ICurrentUser extends IRequestUserInformation {
+    roleIds: string[];
+}

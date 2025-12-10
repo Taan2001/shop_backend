@@ -206,7 +206,7 @@ export const getUserDetailInformationByUserId = async (userId: string): Promise<
             errorMessages: [ERROR_LIST.QUERY_GET_USER_DETAIL_ERROR.ERROR_MESSAGE()],
             errorDetails: [
                 {
-                    functionName: "getUsers",
+                    functionName: "getUserDetailInformationByUserId",
                     params: [],
                     errorMessage: String(error),
                 },

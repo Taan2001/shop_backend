@@ -54,7 +54,8 @@ const authenticationHandlerMiddleware = async (request: Request, response: Respo
         }
 
         const user = users[0];
-        request.currentUser = user;
+
+        request.currentUser = { ...user, roleIds: [] };
 
         nextFunction();
     } catch (error) {
