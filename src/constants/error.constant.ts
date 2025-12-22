@@ -156,7 +156,19 @@ export const ERROR_LIST = {
         ERROR_MESSAGE: () => "Error during database query.",
     },
     QUERY_GET_SHOPS_ERROR: {
-        ERROR_CODE: "E00019",
+        ERROR_CODE: "E00037",
         ERROR_MESSAGE: () => "Error during database query.",
+    },
+    REQUEST_PATH_PARAMS_GET_SHOP_DETAIL_ERROR: {
+        ERROR_CODE: "E00038",
+        ERROR_MESSAGE: (param: string) => `The ${param} does not exist.`,
+    },
+    QUERY_GET_SHOP_DETAIL_ERROR: {
+        ERROR_CODE: "E00039",
+        ERROR_MESSAGE: () => "Error during database query.",
+    },
+    QUERY_GET_SHOP_DETAIL_INFORMATION_NOT_FOUND_ERROR: {
+        ERROR_CODE: "E00040",
+        ERROR_MESSAGE: (param: string) => `The ${param} does not exist.`,
     },
 };

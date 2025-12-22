@@ -5,14 +5,79 @@ import { PoolConnection } from "mysql2/typings/mysql/lib/PoolConnection";
 import { queryPromise, transactionQueryPromise } from "../connection-pool";
 
 // data transfer object
-import { CountGetShopsDTO, CountGetShopsValue, GetShopsDTO, GetShopsValue } from "../dto/shop.dto";
+import { CountGetShopsDTO, CountGetShopsValue, GetShopDetailDTO, GetShopDetailValue, GetShopsDTO, GetShopsValue } from "../dto/shop.dto";
 
 // utils
 import { ResponseError } from "../../utils/common";
 
 // constants
+import { ROLES } from "../../constants/common.constant";
 import { ERROR_LIST } from "../../constants/error.constant";
 import { FIELD_SORT_LIST_IN_GET_SHOPS, SORT_TYPE } from "../../constants/sort.constant";
+
+export const getShopDetailInformationById = async (shopId: string, roleIds: string[]): Promise<GetShopDetailDTO[]> => {
+    try {
+        let sqlSelect = `
+            SELECT
+                MSs.SHOP_ID AS shopId,
+                MSs.SHOP_CODE AS shopCode,
+                MSs.SHOP_NAME AS shopName,
+                MSs.SHOP_OWNER AS ownerId,
+                CONCAT(MUs.USER_FIRST_NAME, " ", MUs.USER_LAST_NAME) AS ownerName,
+                MSs.SHOP_DESCRIPTION AS description,
+                MSs.SHOP_EMAIL AS email,
+                MSs.SHOP_PHONE AS phone,
+                MSs.SHOP_ADDRESS AS address,
+                MSs.SHOP_CITY AS city,
+                MSs.SHOP_STATUS AS status,
+                MSs.SHOP_VERIFIED AS isVerified
+        `;
+        const sqlFrom = `
+            FROM 	
+                M_SHOPS AS MSs
+                INNER JOIN M_USERS AS MUs ON MUs.USER_ID = MSs.SHOP_OWNER
+        `;
+        let sqlWhere = `
+            WHERE	
+                MSs.SHOP_ID = ?
+        `;
+        if (roleIds.includes(ROLES.ADMIN)) {
+            sqlSelect += `,
+                MSs.SHOP_DELETE_FLG AS deleteFlg
+            `;
+        } else {
+            sqlWhere += `
+                AND MSs.SHOP_DELETE_FLG = 0
+            `;
+        }
+
+        const sqlQuery = `
+            ${sqlSelect}
+            ${sqlFrom}
+            ${sqlWhere};
+        `;
+
+        const rows = await queryPromise<GetShopDetailDTO, GetShopDetailValue>(sqlQuery, [shopId]);
+
+        if (!rows) {
+            return [];
+        }
+        return rows;
+    } catch (error) {
+        throw ResponseError({
+            statusCode: 500,
+            errorCode: ERROR_LIST.QUERY_GET_SHOP_DETAIL_ERROR.ERROR_CODE,
+            errorMessages: [ERROR_LIST.QUERY_GET_SHOP_DETAIL_ERROR.ERROR_MESSAGE()],
+            errorDetails: [
+                {
+                    functionName: "getShopDetailInformationById",
+                    params: [],
+                    errorMessage: String(error),
+                },
+            ],
+        });
+    }
+};
 
 /**
  * count shop in database
@@ -46,6 +111,10 @@ export const countGetShops = async (): Promise<CountGetShopsDTO> => {
     }
 };
 
+/**
+ * get the shops in database
+ * @returns { Promise<GetShopsDTO[]> } - Promise resolving to query result
+ */
 export const getShops = async (limit: number, offset: number, sortField: string, sortType: string): Promise<GetShopsDTO[]> => {
     try {
         let sortFieldQuery = "SHOP_NAME";

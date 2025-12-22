@@ -4,18 +4,19 @@ import dayjs from "dayjs";
 
 // interfaces
 import { IResponseSuccess } from "../interfaces/app.interface";
-import { IGetShopsSuccess, IRequestQueryGetShops } from "../interfaces/shop.interface";
+import { IGetShopDetailSuccess, IGetShopsSuccess, IRequestpPathGetShopDetail, IRequestQueryGetShops } from "../interfaces/shop.interface";
 
 // utils
 import { ResponseError, ResponseSuccess } from "../utils/common";
+import { isIntegerStringRegex } from "../utils/number";
 
 // constants
+import { ROLES } from "../constants/common.constant";
 import { ERROR_LIST } from "../constants/error.constant";
-import { isIntegerStringRegex } from "../utils/number";
 import { FIELD_SORT_LIST_IN_GET_SHOPS, SORT_TYPE } from "../constants/sort.constant";
 
 // database
-import { countGetShops, getShops } from "../database/repositories/shop.repository";
+import { countGetShops, getShopDetailInformationById, getShops } from "../database/repositories/shop.repository";
 
 /**
  * Get Shops Service
@@ -121,6 +122,50 @@ export const getShopsService = async (request: Request, nextFunction: NextFuncti
                 totalRecords,
                 totalPages,
             },
+        },
+    });
+};
+
+export const getShopDetailService = async (request: Request, nextFunction: NextFunction): Promise<IResponseSuccess<IGetShopDetailSuccess>> => {
+    // Step 3: Validate path parameters.
+    const { shopId } = request.params as unknown as IRequestpPathGetShopDetail;
+
+    if (shopId === undefined || shopId.trim() === "") {
+        throw ResponseError({
+            statusCode: 400,
+            errorCode: ERROR_LIST.REQUEST_PATH_PARAMS_GET_SHOP_DETAIL_ERROR.ERROR_CODE,
+            errorMessages: [ERROR_LIST.REQUEST_PATH_PARAMS_GET_SHOP_DETAIL_ERROR.ERROR_MESSAGE("shopId")],
+            errorParams: ["shopId"],
+        });
+    }
+
+    // Step 4: Get shop information
+    const shops = await getShopDetailInformationById(shopId, request.currentUser.roleIds);
+
+    if (shops.length !== 1) {
+        throw ResponseError({
+            statusCode: 404,
+            errorCode: ERROR_LIST.QUERY_GET_SHOP_DETAIL_INFORMATION_NOT_FOUND_ERROR.ERROR_CODE,
+            errorMessages: [ERROR_LIST.QUERY_GET_SHOP_DETAIL_INFORMATION_NOT_FOUND_ERROR.ERROR_MESSAGE("shopId")],
+            errorParams: ["shopId"],
+        });
+    }
+    const shop = shops[0];
+
+    // Step 5: Check current user.
+    if (!request.currentUser.roleIds.includes(ROLES.ADMIN) && shop.ownerId !== request.currentUser.userId) {
+        throw ResponseError({
+            statusCode: 401,
+            errorCode: ERROR_LIST.UNAVAILABLE_USER_ROLE_ERROR.ERROR_CODE,
+            errorMessages: [ERROR_LIST.UNAVAILABLE_USER_ROLE_ERROR.ERROR_MESSAGE()],
+            errorParams: [request.currentUser.userId],
+        });
+    }
+
+    return ResponseSuccess<IGetShopDetailSuccess>({
+        statusCode: 200,
+        data: {
+            shop,
         },
     });
 };
