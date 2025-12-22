@@ -1,6 +1,6 @@
 # 🚀 Node Express TypeScript Starter
 
-Dự án mẫu backend sử dụng **Node.js + Express + TypeScript**.
+Dự án mẫu backend sử dụng **Node.js + Express + TypeScript + MYSQL**.
 node version 20.19.4
 
 ## 🛠️ Công nghệ
@@ -8,11 +8,14 @@ node version 20.19.4
 - [Node.js](https://nodejs.org/)
 - [Express](https://expressjs.com/)
 - [TypeScript](https://www.typescriptlang.org/)
-- [Nodemon](https://nodemon.io/) (hot reload)
+- [Nodemon](https://nodemon.io/) + [tsx](https://tsx.is/) (hot reload)
 - [ESLint](https://eslint.org/) + [Prettier](https://prettier.io/) (code style)
+- [esbuild](https://esbuild.github.io/) (build code)
+- [pino](https://getpino.io/#/) (logger)
 
 ## 📂 Cấu trúc thư mục
-````
+
+```
 src/
 ├── controllers/ # Xử lý logic input và output cho services
 ├── middlewares/ # Middleware custom
@@ -33,7 +36,7 @@ src/
 ├ package.json
 ├ README.md
 ├ tsconfig.json
-````
+```
 
 ## 📦 Cài đặt
 

@@ -2,24 +2,24 @@
 import { Request, Response, NextFunction } from "express";
 
 // services
-import { postRefreshTokenService, postSignInService, postSignUpService } from "../services/auth.services";
+import { getUsersService, getUserDetailService, postUserDetailService } from "../services/user.services";
 
 // utils
 import { catchAsync } from "../utils/common";
 import logger from "../utils/logger";
 
 /**
- * Refresh Token Controller
+ * Get Users Controller
  * @param {Request} request - Express Request
  * @param {Response} response - Express Response
  * @param {NextFunction} nextFunction - Express Next Function
  */
-export const postRefreshTokenController = catchAsync(async (request: Request, response: Response, nextFunction: NextFunction) => {
-    request.payload = { refreshToken: request.body.refreshToken };
+export const getUsersController = catchAsync(async (request: Request, response: Response, nextFunction: NextFunction) => {
+    request.payload = { ...request.query };
     // log request
     logger.request(request.requestId, request.apiName, request.payload);
 
-    const result = await postRefreshTokenService(request, nextFunction);
+    const result = await getUsersService(request, nextFunction);
 
     // log response
     logger.response(request.requestId, request.apiName, result);
@@ -29,17 +29,17 @@ export const postRefreshTokenController = catchAsync(async (request: Request, re
 });
 
 /**
- * Sign In Controller
+ * Get User Detail Controller
  * @param {Request} request - Express Request
  * @param {Response} response - Express Response
  * @param {NextFunction} nextFunction - Express Next Function
  */
-export const postSignInController = catchAsync(async (request: Request, response: Response, nextFunction: NextFunction) => {
-    request.payload = { username: request.body.username };
+export const getUserDetailController = catchAsync(async (request: Request, response: Response, nextFunction: NextFunction) => {
+    request.payload = { userId: request.params.userId };
     // log request
     logger.request(request.requestId, request.apiName, request.payload);
 
-    const result = await postSignInService(request, nextFunction);
+    const result = await getUserDetailService(request, nextFunction);
 
     // log response
     logger.response(request.requestId, request.apiName, result);
@@ -49,23 +49,21 @@ export const postSignInController = catchAsync(async (request: Request, response
 });
 
 /**
- * Sign Up Controller
+ * Post User Detail Controller
  * @param {Request} request - Express Request
  * @param {Response} response - Express Response
  * @param {NextFunction} nextFunction - Express Next Function
  */
-export const postSignUpController = catchAsync(async (request: Request, response: Response, nextFunction: NextFunction) => {
-    // create request id
-    request.requestId = Date.now().toString();
-
+export const postUserDetailController = catchAsync(async (request: Request, response: Response, nextFunction: NextFunction) => {
+    request.payload = { userId: request.params.userId };
     // log request
-    logger.request(request.requestId, request.apiName, request.query);
+    logger.request(request.requestId, request.apiName, request.payload);
 
-    const result = await postSignUpService(request, nextFunction);
+    const result = await postUserDetailService(request, nextFunction);
 
     // log response
     logger.response(request.requestId, request.apiName, result);
 
     // send response
-    response.status(201).send(result);
+    response.status(result.statusCode).send(result);
 });

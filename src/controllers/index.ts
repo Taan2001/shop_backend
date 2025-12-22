@@ -1,1 +1,1 @@
-export { getSignInController } from "./auth.controllers";
+export { getSignInController, postSignUpController } from "./auth.controllers";
