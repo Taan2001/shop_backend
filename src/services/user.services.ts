@@ -35,8 +35,7 @@ import {
     insertNewRolesForUser,
     updateUserInformation,
 } from "../database/repositories/user.repository";
-import { getRoleInformationByRoleId, getUserInformationByUserId, insertRoleRelationshipInformation } from "../database/repositories/auth.repository";
-import { get } from "http";
+import { getRoleInformationByRoleId, getUserInformationByUserId } from "../database/repositories/auth.repository";
 
 /**
  * Get Users Service
@@ -46,12 +45,12 @@ import { get } from "http";
  */
 export const getUsersService = async (request: Request, nextFunction: NextFunction): Promise<IResponseSuccess<IGetUsersSuccess>> => {
     try {
-        // Step 2: Validate query parameters.
+        // Step 3: Validate query parameters.
         const { limit, currentPage, sortField, sortType } = request.query as unknown as IRequestQueryGetUsers;
         const messages: string[] = [];
-        const params = [];
+        const params: string[] = [];
 
-        // -----> Step 2-1: Check the required query parameters.
+        // -----> Step 3-1: Check the required query parameters.
         if (limit === undefined) {
             messages.push(ERROR_LIST.REQUEST_QUERY_PARAMS_GET_USERS_ERROR.ERROR_MESSAGE("limit"));
             params.push("limit");
@@ -78,7 +77,7 @@ export const getUsersService = async (request: Request, nextFunction: NextFuncti
             });
         }
 
-        // -----> Step 2-2: Check the data of the query parameters.
+        // -----> Step 3-2: Check the data of the query parameters.
         if (!isIntegerStringRegex(limit) || (Number(limit) !== 10 && Number(limit) !== 20 && Number(limit) !== 50 && Number(limit) !== 100)) {
             messages.push(ERROR_LIST.INVALID_QUERY_PARAMS_GET_USERS_ERROR.ERROR_MESSAGE("limit"));
             params.push(limit);
@@ -102,36 +101,6 @@ export const getUsersService = async (request: Request, nextFunction: NextFuncti
                 errorCode: ERROR_LIST.INVALID_QUERY_PARAMS_GET_USERS_ERROR.ERROR_CODE,
                 errorMessages: messages,
                 errorParams: params,
-            });
-        }
-
-        // Step 3: Check Role(refer Common sheet)
-        // -----> Step 3-1: Get current user information.
-        const currentUsers = await getUserInformationByUserId(request.currentUser.userId);
-        if (currentUsers.length !== 1) {
-            throw ResponseError({
-                statusCode: 401,
-                errorCode: ERROR_LIST.UNAUTHENTICATED_USER_ERROR.ERROR_CODE,
-                errorMessages: [ERROR_LIST.UNAUTHENTICATED_USER_ERROR.ERROR_MESSAGE()],
-            });
-        }
-        if (currentUsers.length === 1 && currentUsers[0].deleteFlg !== 0) {
-            throw ResponseError({
-                statusCode: 401,
-                errorCode: ERROR_LIST.UNAVAILABLE_USER_ERROR.ERROR_CODE,
-                errorMessages: [ERROR_LIST.UNAVAILABLE_USER_ERROR.ERROR_MESSAGE()],
-            });
-        }
-        // -----> Step 3-2: Get the role information of the current user.
-        const roles = await getUserRoleInformationByUserId(request.currentUser.userId);
-
-        // -----> Step 3-3: Check role permission.
-        if (!roles.some((role) => role.roleId === ROLES.ADMIN)) {
-            throw ResponseError({
-                statusCode: 400,
-                errorCode: ERROR_LIST.UNAVAILABLE_USER_ROLE_ERROR.ERROR_CODE,
-                errorMessages: [ERROR_LIST.UNAVAILABLE_USER_ROLE_ERROR.ERROR_MESSAGE()],
-                errorParams: [request.currentUser.userId],
             });
         }
 

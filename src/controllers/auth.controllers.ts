@@ -15,7 +15,9 @@ import logger from "../utils/logger";
  * @param {NextFunction} nextFunction - Express Next Function
  */
 export const postRefreshTokenController = catchAsync(async (request: Request, response: Response, nextFunction: NextFunction) => {
+    // get payload
     request.payload = { refreshToken: request.body.refreshToken };
+
     // log request
     logger.request(request.requestId, request.apiName, request.payload);
 
@@ -35,7 +37,9 @@ export const postRefreshTokenController = catchAsync(async (request: Request, re
  * @param {NextFunction} nextFunction - Express Next Function
  */
 export const postSignInController = catchAsync(async (request: Request, response: Response, nextFunction: NextFunction) => {
+    // get payload
     request.payload = { username: request.body.username };
+
     // log request
     logger.request(request.requestId, request.apiName, request.payload);
 
@@ -55,8 +59,8 @@ export const postSignInController = catchAsync(async (request: Request, response
  * @param {NextFunction} nextFunction - Express Next Function
  */
 export const postSignUpController = catchAsync(async (request: Request, response: Response, nextFunction: NextFunction) => {
-    // create request id
-    request.requestId = Date.now().toString();
+    // get payload
+    request.payload = { ...request.query };
 
     // log request
     logger.request(request.requestId, request.apiName, request.query);

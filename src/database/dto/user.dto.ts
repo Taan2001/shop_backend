@@ -1,18 +1,15 @@
 import { DefaultInsertDTO, DefaultValues } from ".";
 
-export interface GetUserRoleInformationByUserIdValue {
-    [index: number]: string;
-}
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface GetUserRoleInformationByUserIdValue extends DefaultValues {}
 
 export interface GetUserRoleInformationByUserIdDTO {
     roleId: string;
     roleName: string;
 }
 
-export interface CountGetUsersValue {
-    [index: number]: string;
-}
-
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface CountGetUsersValue extends DefaultValues {}
 export interface CountGetUsersDTO {
     totalUsers: number;
 }
@@ -23,9 +20,8 @@ export interface GetUsersValue extends DefaultValues {}
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface GetUsersDTO extends GetUserDetailDTO {}
 
-export interface GetUserDetailValue {
-    [index: number]: string;
-}
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface GetUserDetailValue extends DefaultValues {}
 
 export interface GetUserDetailDTO {
     firstName: string;

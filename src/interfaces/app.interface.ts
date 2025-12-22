@@ -45,3 +45,10 @@ export interface IRequestUserInformation {
 export interface ICurrentUser extends IRequestUserInformation {
     roleIds: string[];
 }
+
+export interface IPageInfo {
+    limit: number;
+    currentPage: number;
+    totalRecords: number;
+    totalPages: number;
+}

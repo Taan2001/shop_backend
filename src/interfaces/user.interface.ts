@@ -1,4 +1,5 @@
 import { GetUsersDTO } from "../database/dto/user.dto";
+import { IPageInfo } from "./app.interface";
 
 export interface IRequestQueryGetUsers {
     limit: "10" | "20" | "50" | "100";
@@ -9,12 +10,7 @@ export interface IRequestQueryGetUsers {
 
 export interface IGetUsersSuccess {
     users: GetUsersDTO[];
-    pageInfo: {
-        limit: number;
-        currentPage: number;
-        totalRecords: number;
-        totalPages: number;
-    };
+    pageInfo: IPageInfo;
 }
 
 export interface IRequestpPathGetUserDetail {

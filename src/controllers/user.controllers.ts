@@ -15,7 +15,9 @@ import logger from "../utils/logger";
  * @param {NextFunction} nextFunction - Express Next Function
  */
 export const getUsersController = catchAsync(async (request: Request, response: Response, nextFunction: NextFunction) => {
+    // get payload
     request.payload = { ...request.query };
+
     // log request
     logger.request(request.requestId, request.apiName, request.payload);
 
@@ -35,7 +37,9 @@ export const getUsersController = catchAsync(async (request: Request, response: 
  * @param {NextFunction} nextFunction - Express Next Function
  */
 export const getUserDetailController = catchAsync(async (request: Request, response: Response, nextFunction: NextFunction) => {
+    // get payload
     request.payload = { userId: request.params.userId };
+
     // log request
     logger.request(request.requestId, request.apiName, request.payload);
 
@@ -55,7 +59,9 @@ export const getUserDetailController = catchAsync(async (request: Request, respo
  * @param {NextFunction} nextFunction - Express Next Function
  */
 export const postUserDetailController = catchAsync(async (request: Request, response: Response, nextFunction: NextFunction) => {
+    // get payload
     request.payload = { userId: request.params.userId };
+
     // log request
     logger.request(request.requestId, request.apiName, request.payload);
 

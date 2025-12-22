@@ -3,6 +3,8 @@ import { PoolConnection } from "mysql2/typings/mysql/lib/PoolConnection";
 
 // database
 import { queryPromise, transactionQueryPromise } from "../connection-pool";
+
+// data transfer object
 import {
     GetUserRoleInformationByUserIdDTO,
     GetUserRoleInformationByUserIdValue,
@@ -86,11 +88,8 @@ export const countGetUsers = async (): Promise<CountGetUsersDTO> => {
         `;
 
         const rows = await queryPromise<CountGetUsersDTO, CountGetUsersValue>(sqlQuery, []);
-        if (!rows) {
-            return { totalUsers: 0 };
-        }
 
-        return { totalUsers: Number(rows[0].totalUsers) };
+        return { totalUsers: Number(rows[0]?.totalUsers) || 0 };
     } catch (error) {
         throw ResponseError({
             statusCode: 500,

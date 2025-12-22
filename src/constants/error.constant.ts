@@ -143,4 +143,20 @@ export const ERROR_LIST = {
         ERROR_CODE: "E00033",
         ERROR_MESSAGE: () => "Error during database query.",
     },
+    REQUEST_QUERY_PARAMS_GET_SHOPS_ERROR: {
+        ERROR_CODE: "E00034",
+        ERROR_MESSAGE: (param: string) => `The ${param} parameter is required.`,
+    },
+    INVALID_QUERY_PARAMS_GET_SHOPS_ERROR: {
+        ERROR_CODE: "E00035",
+        ERROR_MESSAGE: (param: string) => `The parameter value ${param} is invalid.`,
+    },
+    QUERY_COUNT_GET_SHOPS_ERROR: {
+        ERROR_CODE: "E00036",
+        ERROR_MESSAGE: () => "Error during database query.",
+    },
+    QUERY_GET_SHOPS_ERROR: {
+        ERROR_CODE: "E00019",
+        ERROR_MESSAGE: () => "Error during database query.",
+    },
 };
