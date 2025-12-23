@@ -2,7 +2,7 @@
 import { Router } from "express";
 
 // controllers
-import { getShopDetailController, getShopsController, postShopDetailController } from "../controllers/shop.controllers";
+import { deleteShopController, getShopDetailController, getShopsController, postShopDetailController } from "../controllers/shop.controllers";
 
 // middlewares
 import headerHandlerMiddleware from "../middlewares/header-handler.middlerware";
@@ -34,8 +34,14 @@ shopRouter.post(
     postShopDetailController
 );
 
-// // DELETE /:shopId
-// shopRouter.delete("/:shopId", headerHandlerMiddleware, authenticationHandlerMiddleware, authorizationHandlerMiddleware(["ADMIN"]), deleteShopController);
+// DELETE /:shopId
+shopRouter.delete(
+    "/:shopId",
+    headerHandlerMiddleware,
+    authenticationHandlerMiddleware,
+    authorizationHandlerMiddleware(["ADMIN", "SHOP"]),
+    deleteShopController
+);
 
 // // POST /create
 // shopRouter.post("/create", headerHandlerMiddleware, authenticationHandlerMiddleware, authorizationHandlerMiddleware(["ADMIN"]), postCreateShopController);

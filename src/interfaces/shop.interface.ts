@@ -3,6 +3,14 @@ import { IPageInfo } from "./app.interface";
 // data transfer object
 import { GetShopDetailDTO, GetShopsDTO } from "../database/dto/shop.dto";
 
+export interface IRequestPathDeleteShop {
+    shopId: string;
+}
+
+export interface IDeleteShopSuccess {
+    messages: string[];
+}
+
 export interface IRequestPathPostShopDetail {
     shopId: string;
 }

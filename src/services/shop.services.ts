@@ -5,10 +5,12 @@ import dayjs from "dayjs";
 // interfaces
 import { IResponseSuccess } from "../interfaces/app.interface";
 import {
+    IDeleteShopSuccess,
     IGetShopDetailSuccess,
     IGetShopsSuccess,
     IPostShopDetailSuccess,
     IRequestBodyPostShopDetail,
+    IRequestPathDeleteShop,
     IRequestPathGetShopDetail,
     IRequestPathPostShopDetail,
     IRequestQueryGetShops,
@@ -25,7 +27,14 @@ import { ERROR_LIST } from "../constants/error.constant";
 import { FIELD_SORT_LIST_IN_GET_SHOPS, SORT_TYPE } from "../constants/sort.constant";
 
 // database
-import { countGetShops, getShopDetailInformationById, getShops, updateShopInformationById } from "../database/repositories/shop.repository";
+import {
+    countGetShops,
+    deleteShopById,
+    getShopDetailInformationById,
+    getShops,
+    updateShopDeleteFlg,
+    updateShopInformationById,
+} from "../database/repositories/shop.repository";
 import { commitTransaction, createTransactionConnection, releaseTransaction, rollbackTransaction } from "../database/connection-pool";
 
 /**
@@ -404,8 +413,87 @@ export const postShopDetailService = async (request: Request, nextFunction: Next
             },
         });
     } catch (error) {
+        // rollback transaction
         await rollbackTransaction(transaction);
+
+        // release transaction
         await releaseTransaction(transaction);
+
+        throw error;
+    }
+};
+
+/**
+ * Post Shop Detail Service
+ * @param request - Express Request
+ * @param nextFunction - Express NextFunction
+ * @returns { Promise<IResponseSuccess<IDeleteShopSuccess>> } - Promise resolving to service result
+ */
+export const deleteShopService = async (request: Request, nextFunction: NextFunction): Promise<IResponseSuccess<IDeleteShopSuccess>> => {
+    // Step 3: Validate path parameters.
+    const { shopId } = request.params as unknown as IRequestPathDeleteShop;
+    if (shopId === undefined || shopId.trim() === "") {
+        throw ResponseError({
+            statusCode: 400,
+            errorCode: ERROR_LIST.REQUEST_PATH_PARAMS_DELETE_SHOP_ERROR.ERROR_CODE,
+            errorMessages: [ERROR_LIST.REQUEST_PATH_PARAMS_DELETE_SHOP_ERROR.ERROR_MESSAGE("shopId")],
+            errorParams: ["shopId"],
+        });
+    }
+    // Step 4: Get shop information
+    const shops = await getShopDetailInformationById(shopId, request.currentUser.roleIds);
+
+    if (shops.length !== 1) {
+        throw ResponseError({
+            statusCode: 404,
+            errorCode: ERROR_LIST.QUERY_GET_SHOP_DETAIL_INFORMATION_NOT_FOUND_ERROR.ERROR_CODE,
+            errorMessages: [ERROR_LIST.QUERY_GET_SHOP_DETAIL_INFORMATION_NOT_FOUND_ERROR.ERROR_MESSAGE()],
+            errorParams: ["shopId"],
+        });
+    }
+
+    const shop = shops[0];
+    // Step 5: Check current user.
+    if (!request.currentUser.roleIds.includes(ROLES.ADMIN) && shop.ownerId !== request.currentUser.userId) {
+        throw ResponseError({
+            statusCode: 401,
+            errorCode: ERROR_LIST.UNAVAILABLE_USER_ROLE_ERROR.ERROR_CODE,
+            errorMessages: [ERROR_LIST.UNAVAILABLE_USER_ROLE_ERROR.ERROR_MESSAGE()],
+            errorParams: [request.currentUser.userId],
+        });
+    }
+    // Step 5: Update data.
+    // create transaction
+    const transaction = await createTransactionConnection();
+    try {
+        // If the currentUser is not ADMIN and currentUser.userId === ownerId, update deleteFlg field in database
+        if (!request.currentUser.roleIds.includes(ROLES.ADMIN) && shop.ownerId === request.currentUser.userId) {
+            const timestamp = Date.now();
+            const date = dayjs(timestamp).format("YYYY-MM-DD HH:MM:SS");
+            await updateShopDeleteFlg(transaction, { shopId, updatedDate: date, timestamp, updatedBy: request.currentUser.userId });
+        } else if (request.currentUser.roleIds.includes(ROLES.ADMIN)) {
+            await deleteShopById(transaction, shopId);
+        }
+
+        // commit transaction
+        await commitTransaction(transaction);
+
+        // release transaction
+        await releaseTransaction(transaction);
+
+        return ResponseSuccess<IDeleteShopSuccess>({
+            statusCode: 200,
+            data: {
+                messages: ["This shop is deleted successfully."],
+            },
+        });
+    } catch (error) {
+        // rollback transaction
+        await rollbackTransaction(transaction);
+
+        // release transaction
+        await releaseTransaction(transaction);
+
         throw error;
     }
 };

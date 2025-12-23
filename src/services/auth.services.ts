@@ -355,8 +355,12 @@ export const postSignUpService = async (request: Request, nextFunction: NextFunc
 
             return ResponseSuccess<IPostSignUpSuccess>({ statusCode: 201, data: { user: { userId: newUserId }, message: "User registration successful" } });
         } catch (error) {
+            // rollback transaction
             await rollbackTransaction(transaction);
+
+            // release transaction
             await releaseTransaction(transaction);
+
             throw error;
         }
     } catch (error) {

@@ -190,4 +190,16 @@ export const ERROR_LIST = {
         ERROR_CODE: "E00044",
         ERROR_MESSAGE: () => "Error during database update.",
     },
+    REQUEST_PATH_PARAMS_DELETE_SHOP_ERROR: {
+        ERROR_CODE: "E00045",
+        ERROR_MESSAGE: (param: string) => `The ${param} does not exist.`,
+    },
+    QUERY_UPDATE_SHOP_DELETE_FLG_ERROR: {
+        ERROR_CODE: "E00046",
+        ERROR_MESSAGE: () => "Error during database update.",
+    },
+    QUERY_DELETE_SHOP_BY_ID_ERROR: {
+        ERROR_CODE: "E00047",
+        ERROR_MESSAGE: () => "Error during database deleteion.",
+    },
 };

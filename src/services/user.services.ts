@@ -416,8 +416,12 @@ export const postUserDetailService = async (request: Request, nextFunction: Next
                 data: { messages: ["User update successful"] },
             });
         } catch (error) {
+            // rollback transaction
             await rollbackTransaction(transaction);
+
+            // release transaction
             await releaseTransaction(transaction);
+
             throw error;
         }
     } catch (error) {

@@ -8,10 +8,13 @@ import { queryPromise, transactionQueryPromise } from "../connection-pool";
 import {
     CountGetShopsDTO,
     CountGetShopsValue,
+    DeleteShopDTO,
+    DeleteShopValues,
     GetShopDetailDTO,
     GetShopDetailValue,
     GetShopsDTO,
     GetShopsValue,
+    IDeleteShopPayload,
     IPostShopDetailPayload,
     PostShopDetailDTO,
     PostShopDetailValues,
@@ -25,6 +28,102 @@ import { ROLES } from "../../constants/common.constant";
 import { ERROR_LIST } from "../../constants/error.constant";
 import { FIELD_SORT_LIST_IN_GET_SHOPS, SORT_TYPE } from "../../constants/sort.constant";
 
+/**
+ * delete a shop in database
+ * @param { PoolConnection } transaction - transaction connection
+ * @param { string } shopId - shopId
+ * @returns { Promise<DeleteShopDTO> } - Promise resolving
+ */
+export const deleteShopById = async (transaction: PoolConnection, shopId: string): Promise<DeleteShopDTO[]> => {
+    try {
+        const sqlDelete = `
+            DELETE FROM M_SHOPS
+                WHERE SHOP_ID = ?;
+        `;
+
+        const rows = await transactionQueryPromise<DeleteShopDTO, DeleteShopValues>(transaction, sqlDelete, [shopId]);
+
+        if (!rows) {
+            return [];
+        }
+        return rows;
+    } catch (error) {
+        throw ResponseError({
+            statusCode: 500,
+            errorCode: ERROR_LIST.QUERY_DELETE_SHOP_BY_ID_ERROR.ERROR_CODE,
+            errorMessages: [ERROR_LIST.QUERY_DELETE_SHOP_BY_ID_ERROR.ERROR_MESSAGE()],
+            errorDetails: [
+                {
+                    functionName: "updateShopDeleteFlg",
+                    params: [
+                        JSON.stringify({
+                            shopId: shopId,
+                        }),
+                    ],
+                    errorMessage: String(error),
+                },
+            ],
+        });
+    }
+};
+
+/**
+ * update shop delete flg in database
+ * @param { PoolConnection } transaction - transaction connection
+ * @param { IPostShopDetailPayload } payload - payload for updation
+ * @returns { Promise<CountGetShopsDTO> } - Promise resolving to get shop
+ */
+export const updateShopDeleteFlg = async (
+    transaction: PoolConnection,
+    { shopId, updatedBy, updatedDate, timestamp }: IDeleteShopPayload
+): Promise<DeleteShopDTO[]> => {
+    try {
+        const sqlUpdate = `
+            UPDATE M_SHOPS
+            SET
+                SHOP_DELETE_FLG = 1,
+                SHOP_UPDATED_BY = ?,
+                SHOP_UPDATED_AT = ?,
+                SHOP_UPDATED_AT_SYSTEM = ?
+            WHERE
+                SHOP_ID = ?;
+        `;
+
+        const rows = await transactionQueryPromise<DeleteShopDTO, DeleteShopValues>(transaction, sqlUpdate, [updatedBy, timestamp, updatedDate, shopId]);
+
+        if (!rows) {
+            return [];
+        }
+        return rows;
+    } catch (error) {
+        throw ResponseError({
+            statusCode: 500,
+            errorCode: ERROR_LIST.QUERY_UPDATE_SHOP_DELETE_FLG_ERROR.ERROR_CODE,
+            errorMessages: [ERROR_LIST.QUERY_UPDATE_SHOP_DELETE_FLG_ERROR.ERROR_MESSAGE()],
+            errorDetails: [
+                {
+                    functionName: "updateShopDeleteFlg",
+                    params: [
+                        JSON.stringify({
+                            shopId: shopId,
+                            updatedBy: updatedBy,
+                            timestamp: timestamp,
+                            updatedDate: updatedDate,
+                        }),
+                    ],
+                    errorMessage: String(error),
+                },
+            ],
+        });
+    }
+};
+
+/**
+ * update shop information into database
+ * @param { PoolConnection } transaction - transaction connection
+ * @param { IPostShopDetailPayload } payload - payload for updation
+ * @returns { Promise<PostShopDetailDTO> } - Promise resolving to get shop
+ */
 export const updateShopInformationById = async (transaction: PoolConnection, payload: IPostShopDetailPayload): Promise<PostShopDetailDTO[]> => {
     try {
         let sqlSet = `SET 
@@ -104,6 +203,12 @@ export const updateShopInformationById = async (transaction: PoolConnection, pay
     }
 };
 
+/**
+ * get the shop information in database
+ * @param { string } shopId - shopId
+ * @param { string[] } roleIds - roles of user
+ * @returns { Promise<GetShopDetailDTO> } - Promise resolving to get shop
+ */
 export const getShopDetailInformationById = async (shopId: string, roleIds: string[]): Promise<GetShopDetailDTO[]> => {
     try {
         let sqlSelect = `

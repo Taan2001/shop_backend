@@ -1,4 +1,16 @@
 import { DefaultInsertDTO, DefaultValues } from ".";
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface DeleteShopValues extends DefaultValues {}
+
+export interface IDeleteShopPayload {
+    shopId: string;
+    timestamp: number;
+    updatedDate: string;
+    updatedBy: string;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface DeleteShopDTO extends DefaultInsertDTO {}
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface PostShopDetailValues extends DefaultValues {}
