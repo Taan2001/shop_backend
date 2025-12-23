@@ -5,7 +5,17 @@ import { PoolConnection } from "mysql2/typings/mysql/lib/PoolConnection";
 import { queryPromise, transactionQueryPromise } from "../connection-pool";
 
 // data transfer object
-import { CountGetShopsDTO, CountGetShopsValue, GetShopDetailDTO, GetShopDetailValue, GetShopsDTO, GetShopsValue } from "../dto/shop.dto";
+import {
+    CountGetShopsDTO,
+    CountGetShopsValue,
+    GetShopDetailDTO,
+    GetShopDetailValue,
+    GetShopsDTO,
+    GetShopsValue,
+    IPostShopDetailPayload,
+    PostShopDetailDTO,
+    PostShopDetailValues,
+} from "../dto/shop.dto";
 
 // utils
 import { ResponseError } from "../../utils/common";
@@ -14,6 +24,85 @@ import { ResponseError } from "../../utils/common";
 import { ROLES } from "../../constants/common.constant";
 import { ERROR_LIST } from "../../constants/error.constant";
 import { FIELD_SORT_LIST_IN_GET_SHOPS, SORT_TYPE } from "../../constants/sort.constant";
+
+export const updateShopInformationById = async (transaction: PoolConnection, payload: IPostShopDetailPayload): Promise<PostShopDetailDTO[]> => {
+    try {
+        let sqlSet = `SET 
+                SHOP_NAME = ?,
+                SHOP_DESCRIPTION = ?,
+                SHOP_EMAIL = ?,
+                SHOP_PHONE = ?,
+                SHOP_ADDRESS = ?,
+                SHOP_CITY = ?,
+                SHOP_UPDATED_BY = ?,
+                SHOP_UPDATED_AT = ?,
+                SHOP_UPDATED_AT_SYSTEM = ?`;
+
+        const sqlValues = [
+            payload.shopName,
+            payload.description,
+            payload.email,
+            payload.phone,
+            payload.address,
+            payload.city,
+            payload.updatedBy,
+            payload.timestamp,
+            payload.updatedDate,
+        ];
+
+        if (payload.deleteFlg !== undefined) {
+            sqlSet = `${sqlSet},
+                SHOP_DELETE_FLG = ?`;
+            sqlValues.push(payload.deleteFlg);
+        }
+        if (payload.status !== undefined) {
+            sqlSet = `${sqlSet},
+                SHOP_STATUS = ?`;
+            sqlValues.push(payload.status);
+        }
+
+        const sqlUpdate = `
+            UPDATE M_SHOPS
+            ${sqlSet}
+            WHERE
+                SHOP_ID = ?;
+        `;
+
+        const rows = await transactionQueryPromise<PostShopDetailDTO, PostShopDetailValues>(transaction, sqlUpdate, [...sqlValues, payload.shopId]);
+
+        if (!rows) {
+            return [];
+        }
+        return rows;
+    } catch (error) {
+        throw ResponseError({
+            statusCode: 500,
+            errorCode: ERROR_LIST.QUERY_UPDATE_SHOP_INFOR_ERROR.ERROR_CODE,
+            errorMessages: [ERROR_LIST.QUERY_UPDATE_SHOP_INFOR_ERROR.ERROR_MESSAGE()],
+            errorDetails: [
+                {
+                    functionName: "updateShopInformationById",
+                    params: [
+                        JSON.stringify({
+                            shopId: payload.shopId,
+                            shopName: payload.shopName,
+                            description: payload.description,
+                            email: payload.email,
+                            phone: payload.phone,
+                            address: payload.address,
+                            city: payload.city,
+                            status: payload.status,
+                            updatedBy: payload.updatedBy,
+                            timestamp: payload.timestamp,
+                            updatedDate: payload.updatedDate,
+                        }),
+                    ],
+                    errorMessage: String(error),
+                },
+            ],
+        });
+    }
+};
 
 export const getShopDetailInformationById = async (shopId: string, roleIds: string[]): Promise<GetShopDetailDTO[]> => {
     try {

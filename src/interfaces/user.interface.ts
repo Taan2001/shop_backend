@@ -13,7 +13,7 @@ export interface IGetUsersSuccess {
     pageInfo: IPageInfo;
 }
 
-export interface IRequestpPathGetUserDetail {
+export interface IRequestPathGetUserDetail {
     userId: string;
 }
 
@@ -26,7 +26,7 @@ export interface IGetUserDetailSuccess {
     };
 }
 
-export interface IRequestpPathPostUserDetail {
+export interface IRequestPathPostUserDetail {
     userId: string;
 }
 

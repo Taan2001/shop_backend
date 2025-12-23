@@ -133,7 +133,7 @@ export const ERROR_LIST = {
     },
     QUERY_UPDATE_USER_INFOR_ERROR: {
         ERROR_CODE: "E00031",
-        ERROR_MESSAGE: () => "Error during database query.",
+        ERROR_MESSAGE: () => "Error during database update.",
     },
     QUERY_DELETE_ROLES_FOR_USER_ERROR: {
         ERROR_CODE: "E00032",
@@ -169,6 +169,25 @@ export const ERROR_LIST = {
     },
     QUERY_GET_SHOP_DETAIL_INFORMATION_NOT_FOUND_ERROR: {
         ERROR_CODE: "E00040",
+        ERROR_MESSAGE: () => "The shop information could not be found.",
+    },
+    REQUEST_PATH_PARAMS_POST_SHOP_DETAIL_ERROR: {
+        ERROR_CODE: "E00041",
         ERROR_MESSAGE: (param: string) => `The ${param} does not exist.`,
+    },
+    REQUEST_BODY_PARAMS_POST_SHOP_DETAIL_REQUIRED_ERROR: {
+        ERROR_CODE: "E00042",
+        ERROR_MESSAGE: (fieldName: string) => `The ${fieldName} field is required`,
+    },
+    REQUEST_BODY_PARAMS_POST_SHOP_DETAIL_ERROR: {
+        ERROR_CODE: "E00043",
+        ERROR_MESSAGE: (
+            fieldName: string,
+            error: "dataType" | "minLength" | "maxLength" | "minValue" | "maxValue" | "exist in database" | "duplicate" | "admin role default" | "invalid value"
+        ) => `The data in ${fieldName} is having an error about ${error}.`,
+    },
+    QUERY_UPDATE_SHOP_INFOR_ERROR: {
+        ERROR_CODE: "E00044",
+        ERROR_MESSAGE: () => "Error during database update.",
     },
 };

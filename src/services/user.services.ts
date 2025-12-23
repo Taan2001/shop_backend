@@ -4,13 +4,13 @@ import dayjs from "dayjs";
 
 // interfaces
 import {
-    IRequestpPathGetUserDetail,
+    IRequestPathGetUserDetail,
     IRequestQueryGetUsers,
     IGetUserDetailSuccess,
     IGetUsersSuccess,
     IPostUserDetailSuccess,
     IRequestBodyPostUserDetail,
-    IRequestpPathPostUserDetail,
+    IRequestPathPostUserDetail,
 } from "../interfaces/user.interface";
 import { IResponseSuccess } from "../interfaces/app.interface";
 
@@ -159,7 +159,7 @@ export const getUsersService = async (request: Request, nextFunction: NextFuncti
 export const getUserDetailService = async (request: Request, nextFunction: NextFunction): Promise<IResponseSuccess<IGetUserDetailSuccess>> => {
     try {
         // Step 3: Validate path parameters.
-        const { userId } = request.params as unknown as IRequestpPathGetUserDetail;
+        const { userId } = request.params as unknown as IRequestPathGetUserDetail;
         if (!userId) {
             throw ResponseError({
                 statusCode: 400,
@@ -213,7 +213,7 @@ export const getUserDetailService = async (request: Request, nextFunction: NextF
 export const postUserDetailService = async (request: Request, nextFunction: NextFunction): Promise<IResponseSuccess<IPostUserDetailSuccess>> => {
     try {
         // Step 3: Validate path parameters.
-        const { userId } = request.params as unknown as IRequestpPathPostUserDetail;
+        const { userId } = request.params as unknown as IRequestPathPostUserDetail;
 
         if (!userId) {
             throw ResponseError({
@@ -412,7 +412,7 @@ export const postUserDetailService = async (request: Request, nextFunction: Next
             await releaseTransaction(transaction);
 
             return ResponseSuccess<IPostUserDetailSuccess>({
-                statusCode: 204,
+                statusCode: 200,
                 data: { messages: ["User update successful"] },
             });
         } catch (error) {

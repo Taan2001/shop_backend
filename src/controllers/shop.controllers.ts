@@ -2,7 +2,7 @@
 import { Request, Response, NextFunction } from "express";
 
 // services
-import { getShopDetailService, getShopsService } from "../services/shop.services";
+import { getShopDetailService, getShopsService, postShopDetailService } from "../services/shop.services";
 
 // utils
 import { catchAsync } from "../utils/common";
@@ -44,6 +44,28 @@ export const getShopDetailController = catchAsync(async (request: Request, respo
     logger.request(request.requestId, request.apiName, request.payload);
 
     const result = await getShopDetailService(request, nextFunction);
+
+    // log response
+    logger.response(request.requestId, request.apiName, result);
+
+    // send response
+    response.status(result.statusCode).send(result);
+});
+
+/**
+ * Post Shop Detail Controller
+ * @param {Request} request - Express Request
+ * @param {Response} response - Express Response
+ * @param {NextFunction} nextFunction - Express Next Function
+ */
+export const postShopDetailController = catchAsync(async (request: Request, response: Response, nextFunction: NextFunction) => {
+    // get payload
+    request.payload = { ...request.params, ...request.body };
+
+    // log request
+    logger.request(request.requestId, request.apiName, request.payload);
+
+    const result = await postShopDetailService(request, nextFunction);
 
     // log response
     logger.response(request.requestId, request.apiName, result);

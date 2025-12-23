@@ -1,6 +1,27 @@
 import { DefaultInsertDTO, DefaultValues } from ".";
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface PostShopDetailValues extends DefaultValues {}
+
+export interface IPostShopDetailPayload {
+    shopId: string;
+    shopName: string;
+    description: string;
+    email: string;
+    phone: string;
+    address: string;
+    city: string;
+    status: number;
+    deleteFlg: number;
+    timestamp: number;
+    updatedDate: string;
+    updatedBy: string;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface PostShopDetailDTO extends DefaultInsertDTO {}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface GetShopDetailValue extends DefaultValues {}
 
 export interface GetShopDetailDTO {

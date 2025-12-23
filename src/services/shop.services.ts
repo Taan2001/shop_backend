@@ -4,11 +4,20 @@ import dayjs from "dayjs";
 
 // interfaces
 import { IResponseSuccess } from "../interfaces/app.interface";
-import { IGetShopDetailSuccess, IGetShopsSuccess, IRequestpPathGetShopDetail, IRequestQueryGetShops } from "../interfaces/shop.interface";
+import {
+    IGetShopDetailSuccess,
+    IGetShopsSuccess,
+    IPostShopDetailSuccess,
+    IRequestBodyPostShopDetail,
+    IRequestPathGetShopDetail,
+    IRequestPathPostShopDetail,
+    IRequestQueryGetShops,
+} from "../interfaces/shop.interface";
 
 // utils
 import { ResponseError, ResponseSuccess } from "../utils/common";
 import { isIntegerStringRegex } from "../utils/number";
+import { isValidEmail, isVietnamesePhoneNumber } from "../utils/helpers";
 
 // constants
 import { ROLES } from "../constants/common.constant";
@@ -16,7 +25,8 @@ import { ERROR_LIST } from "../constants/error.constant";
 import { FIELD_SORT_LIST_IN_GET_SHOPS, SORT_TYPE } from "../constants/sort.constant";
 
 // database
-import { countGetShops, getShopDetailInformationById, getShops } from "../database/repositories/shop.repository";
+import { countGetShops, getShopDetailInformationById, getShops, updateShopInformationById } from "../database/repositories/shop.repository";
+import { commitTransaction, createTransactionConnection, releaseTransaction, rollbackTransaction } from "../database/connection-pool";
 
 /**
  * Get Shops Service
@@ -126,9 +136,15 @@ export const getShopsService = async (request: Request, nextFunction: NextFuncti
     });
 };
 
+/**
+ * Get Shop Detail Service
+ * @param request - Express Request
+ * @param nextFunction - Express NextFunction
+ * @returns { Promise<IResponseSuccess<IGetShopDetailSuccess>> } - Promise resolving to service result
+ */
 export const getShopDetailService = async (request: Request, nextFunction: NextFunction): Promise<IResponseSuccess<IGetShopDetailSuccess>> => {
     // Step 3: Validate path parameters.
-    const { shopId } = request.params as unknown as IRequestpPathGetShopDetail;
+    const { shopId } = request.params as unknown as IRequestPathGetShopDetail;
 
     if (shopId === undefined || shopId.trim() === "") {
         throw ResponseError({
@@ -146,7 +162,7 @@ export const getShopDetailService = async (request: Request, nextFunction: NextF
         throw ResponseError({
             statusCode: 404,
             errorCode: ERROR_LIST.QUERY_GET_SHOP_DETAIL_INFORMATION_NOT_FOUND_ERROR.ERROR_CODE,
-            errorMessages: [ERROR_LIST.QUERY_GET_SHOP_DETAIL_INFORMATION_NOT_FOUND_ERROR.ERROR_MESSAGE("shopId")],
+            errorMessages: [ERROR_LIST.QUERY_GET_SHOP_DETAIL_INFORMATION_NOT_FOUND_ERROR.ERROR_MESSAGE()],
             errorParams: ["shopId"],
         });
     }
@@ -168,4 +184,228 @@ export const getShopDetailService = async (request: Request, nextFunction: NextF
             shop,
         },
     });
+};
+
+/**
+ * Post Shop Detail Service
+ * @param request - Express Request
+ * @param nextFunction - Express NextFunction
+ * @returns { Promise<IResponseSuccess<IPostShopDetailSuccess>> } - Promise resolving to service result
+ */
+export const postShopDetailService = async (request: Request, nextFunction: NextFunction): Promise<IResponseSuccess<IPostShopDetailSuccess>> => {
+    // Step 3: Validate path parameters.
+    const { shopId } = request.params as unknown as IRequestPathPostShopDetail;
+    if (shopId === undefined || shopId.trim() === "") {
+        throw ResponseError({
+            statusCode: 400,
+            errorCode: ERROR_LIST.REQUEST_PATH_PARAMS_POST_SHOP_DETAIL_ERROR.ERROR_CODE,
+            errorMessages: [ERROR_LIST.REQUEST_PATH_PARAMS_POST_SHOP_DETAIL_ERROR.ERROR_MESSAGE("shopId")],
+            errorParams: ["shopId"],
+        });
+    }
+
+    // Step 4: Get shop information
+    const shops = await getShopDetailInformationById(shopId, request.currentUser.roleIds);
+
+    if (shops.length !== 1) {
+        throw ResponseError({
+            statusCode: 404,
+            errorCode: ERROR_LIST.QUERY_GET_SHOP_DETAIL_INFORMATION_NOT_FOUND_ERROR.ERROR_CODE,
+            errorMessages: [ERROR_LIST.QUERY_GET_SHOP_DETAIL_INFORMATION_NOT_FOUND_ERROR.ERROR_MESSAGE()],
+            errorParams: ["shopId"],
+        });
+    }
+
+    const shop = shops[0];
+    // Step 5: Check current user.
+    if (!request.currentUser.roleIds.includes(ROLES.ADMIN) && shop.ownerId !== request.currentUser.userId) {
+        throw ResponseError({
+            statusCode: 401,
+            errorCode: ERROR_LIST.UNAVAILABLE_USER_ROLE_ERROR.ERROR_CODE,
+            errorMessages: [ERROR_LIST.UNAVAILABLE_USER_ROLE_ERROR.ERROR_MESSAGE()],
+            errorParams: [request.currentUser.userId],
+        });
+    }
+
+    // Step 6: Validate query parameters.
+    const { shopName, description, email, address, phone, city, status, deleteFlg } = request.body as unknown as IRequestBodyPostShopDetail;
+    const messages: string[] = [];
+    const params: string[] = [];
+
+    // -----> Step 6-1: Check the required query parameters.
+    // shopName
+    if (shopName === undefined) {
+        messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_SHOP_DETAIL_REQUIRED_ERROR.ERROR_MESSAGE("shopName"));
+        params.push("shopName");
+    }
+    // description
+    if (description === undefined) {
+        messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_SHOP_DETAIL_REQUIRED_ERROR.ERROR_MESSAGE("description"));
+        params.push("description");
+    }
+    // email
+    if (email === undefined) {
+        messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_SHOP_DETAIL_REQUIRED_ERROR.ERROR_MESSAGE("email"));
+        params.push("email");
+    }
+    // phone
+    if (phone === undefined) {
+        messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_SHOP_DETAIL_REQUIRED_ERROR.ERROR_MESSAGE("phone"));
+        params.push("phone");
+    }
+    // address
+    if (address === undefined) {
+        messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_SHOP_DETAIL_REQUIRED_ERROR.ERROR_MESSAGE("address"));
+        params.push("address");
+    }
+    // city
+    if (city === undefined) {
+        messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_SHOP_DETAIL_REQUIRED_ERROR.ERROR_MESSAGE("city"));
+        params.push("city");
+    }
+    // ADMIN ?
+    if (request.currentUser.roleIds.includes(ROLES.ADMIN)) {
+        // status
+        if (status === undefined) {
+            messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_SHOP_DETAIL_REQUIRED_ERROR.ERROR_MESSAGE("status"));
+            params.push("status");
+        }
+        // deleteFlg
+        if (deleteFlg === undefined) {
+            messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_SHOP_DETAIL_REQUIRED_ERROR.ERROR_MESSAGE("deleteFlg"));
+            params.push("deleteFlg");
+        }
+    }
+
+    if (messages.length > 0) {
+        throw ResponseError({
+            statusCode: 400,
+            errorCode: ERROR_LIST.REQUEST_BODY_PARAMS_POST_SHOP_DETAIL_REQUIRED_ERROR.ERROR_CODE,
+            errorMessages: messages,
+            errorParams: params,
+        });
+    }
+
+    // -----> Step 6-2: Check the data of the query parameters.
+    // shopName
+    if (typeof shopName !== "string") {
+        messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_SHOP_DETAIL_ERROR.ERROR_MESSAGE("shopName", "dataType"));
+    }
+    if (typeof shopName === "string" && shopName.length === 0) {
+        messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_SHOP_DETAIL_ERROR.ERROR_MESSAGE("shopName", "minLength"));
+    }
+    if (typeof shopName === "string" && shopName.length > 64) {
+        messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_SHOP_DETAIL_ERROR.ERROR_MESSAGE("shopName", "maxLength"));
+    }
+    // description
+    if (typeof description !== "string") {
+        messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_SHOP_DETAIL_ERROR.ERROR_MESSAGE("description", "dataType"));
+    }
+    if (typeof description === "string" && description.length === 0) {
+        messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_SHOP_DETAIL_ERROR.ERROR_MESSAGE("description", "minLength"));
+    }
+    if (typeof description === "string" && description.length > 128) {
+        messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_SHOP_DETAIL_ERROR.ERROR_MESSAGE("description", "maxLength"));
+    }
+    // email
+    if (isValidEmail(email) === false) {
+        messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_SHOP_DETAIL_ERROR.ERROR_MESSAGE("email", "dataType"));
+    }
+    if (typeof email === "string" && email.length > 64) {
+        messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_SHOP_DETAIL_ERROR.ERROR_MESSAGE("email", "maxLength"));
+    }
+    // phone
+    if (isVietnamesePhoneNumber(phone) === false) {
+        messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_SHOP_DETAIL_ERROR.ERROR_MESSAGE("phone", "dataType"));
+    }
+    // address
+    if (typeof address !== "string") {
+        messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_SHOP_DETAIL_ERROR.ERROR_MESSAGE("address", "dataType"));
+    }
+    if (typeof address === "string" && address.length === 0) {
+        messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_SHOP_DETAIL_ERROR.ERROR_MESSAGE("address", "minLength"));
+    }
+    if (typeof address === "string" && address.length > 128) {
+        messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_SHOP_DETAIL_ERROR.ERROR_MESSAGE("address", "maxLength"));
+    }
+    // city
+    if (typeof city !== "string") {
+        messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_SHOP_DETAIL_ERROR.ERROR_MESSAGE("city", "dataType"));
+    }
+    if (typeof city === "string" && city.length === 0) {
+        messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_SHOP_DETAIL_ERROR.ERROR_MESSAGE("city", "minLength"));
+    }
+    if (typeof city === "string" && city.length > 128) {
+        messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_SHOP_DETAIL_ERROR.ERROR_MESSAGE("city", "maxLength"));
+    }
+    // ADMIN ?
+    if (request.currentUser.roleIds.includes(ROLES.ADMIN)) {
+        // status
+        if (typeof status !== "number") {
+            messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_SHOP_DETAIL_ERROR.ERROR_MESSAGE("status", "dataType"));
+        }
+        if (typeof status === "number" && [0, 1].includes(status) === false) {
+            messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_SHOP_DETAIL_ERROR.ERROR_MESSAGE("status", "invalid value"));
+        }
+
+        // deleteFlg
+        if (typeof deleteFlg !== "number") {
+            messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_SHOP_DETAIL_ERROR.ERROR_MESSAGE("deleteFlg", "dataType"));
+        }
+        if (typeof deleteFlg === "number" && [0, 1].includes(deleteFlg) === false) {
+            messages.push(ERROR_LIST.REQUEST_BODY_PARAMS_POST_SHOP_DETAIL_ERROR.ERROR_MESSAGE("deleteFlg", "invalid value"));
+        }
+    }
+
+    if (messages.length > 0) {
+        throw ResponseError({
+            statusCode: 400,
+            errorCode: ERROR_LIST.REQUEST_BODY_PARAMS_POST_SHOP_DETAIL_ERROR.ERROR_CODE,
+            errorMessages: messages,
+        });
+    }
+
+    // Step 7: Calculate the value to be inserted.
+    const timestamp = Date.now();
+    const updatedDate = dayjs(timestamp).format("YYYY-MM-DD HH:mm:ss");
+
+    // Step 8: Update data.
+    // create transaction
+    const transaction = await createTransactionConnection();
+    try {
+        await updateShopInformationById(transaction, {
+            shopId,
+            shopName,
+            description,
+            email,
+            address,
+            phone,
+            city,
+            status,
+            deleteFlg,
+            timestamp,
+            updatedBy: request.currentUser.userId,
+            updatedDate,
+        });
+
+        // commit transaction
+        await commitTransaction(transaction);
+
+        // release transaction
+        await releaseTransaction(transaction);
+
+        return ResponseSuccess<IPostShopDetailSuccess>({
+            statusCode: 200,
+            data: {
+                shop: {
+                    shopId,
+                },
+                messages: ["This shop is updated successfully."],
+            },
+        });
+    } catch (error) {
+        await rollbackTransaction(transaction);
+        await releaseTransaction(transaction);
+        throw error;
+    }
 };
